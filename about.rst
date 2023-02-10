@@ -10,9 +10,11 @@ In my spare time, I love running in the forest (and sometimes just walking with 
 and contributing to the open source community.
 I also maintain a few of `my own open source projects<https://github.com/mrcjkb?tab=repositories&q=&type=source&language=&sort=>`_.
 
-My text editor of choice is Neovim_.
+My development environment consists mostly of NixOS_, XMonad_ and Neovim_.
 
 .. _Haskell: https://www.haskell.org/
 .. _Nix: https://nixos.org/
 .. _tiko: https://tiko.energy/
+.. _NixOS: https://nixos.org/
+.. _XMonad: https://xmonad.org/
 .. _Neovim: https://neovim.io/

@@ -1,5 +1,6 @@
 ---
 title: Publish your Neovim plugins to LuaRocks
+tags: neovim, plugin, luarocks, lua, dependencies
 ---
 
 This is a follow-up on a [series of blog posts](https://teto.github.io/posts/2021-09-17-neovim-plugin-luarocks.html) by @teto that propose a solution to a major pain point of the Neovim plugin ecosystem - Dependency management.

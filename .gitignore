@@ -23,3 +23,5 @@ cabal.project.local~
 .ghc.environment.*
 hie.yaml
 result
+_cache/
+_site/
