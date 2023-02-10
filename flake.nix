@@ -5,7 +5,6 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     hakyll-flakes = {
       url = "github:Radvendii/hakyll-flakes";
-      inputs.nixpkgs.follows = "nixpkgs";
     };
     flake-utils.url = "github:numtide/flake-utils";
     pre-commit-hooks = {
