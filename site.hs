@@ -2,6 +2,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 import           Data.Monoid (mappend)
 import           Hakyll
+import Text.Pandoc.Highlighting
+import Text.Pandoc.Options      (ReaderOptions (..), WriterOptions (..))
 
 
 --------------------------------------------------------------------------------
@@ -17,13 +19,13 @@ main = hakyll $ do
 
     match (fromList ["about.rst", "contact.markdown"]) $ do
         route   $ setExtension "html"
-        compile $ pandocCompiler
+        compile $ pandocCompiler'
             >>= loadAndApplyTemplate "templates/default.html" defaultContext
             >>= relativizeUrls
 
     match "posts/*" $ do
         route $ setExtension "html"
-        compile $ pandocCompiler
+        compile $ pandocCompiler'
             >>= loadAndApplyTemplate "templates/post.html"    postCtx
             >>= loadAndApplyTemplate "templates/default.html" postCtx
             >>= relativizeUrls
@@ -41,6 +43,11 @@ main = hakyll $ do
                 >>= loadAndApplyTemplate "templates/archive.html" archiveCtx
                 >>= loadAndApplyTemplate "templates/default.html" archiveCtx
                 >>= relativizeUrls
+
+    create ["css/syntax.css"] $ do
+      route idRoute
+      compile $ do
+        makeItem $ styleToCss pandocCodeStyle
 
 
     match "index.html" $ do
@@ -64,3 +71,14 @@ postCtx :: Context String
 postCtx =
     dateField "date" "%B %e, %Y" `mappend`
     defaultContext
+
+pandocCodeStyle :: Style
+pandocCodeStyle = haddock
+
+pandocCompiler' :: Compiler (Item String)
+pandocCompiler' =
+  pandocCompilerWith
+    defaultHakyllReaderOptions
+    defaultHakyllWriterOptions
+      { writerHighlightStyle   = Just pandocCodeStyle
+      }

@@ -2,15 +2,16 @@
 title: Publish your Neovim plugins to LuaRocks
 ---
 
-This is a follow-up on a [series of blog posts](https://teto.github.io/posts/2021-09-17-neovim-plugin-luarocks.html) by @teto that propose a solution to a major pain point of the Neovim plugin ecosystem: Dependency management.
+This is a follow-up on a [series of blog posts](https://teto.github.io/posts/2021-09-17-neovim-plugin-luarocks.html) by @teto that propose a solution to a major pain point of the Neovim plugin ecosystem - Dependency management.
 
-As someone who only recently started maintaining Neovim plugins, I have been quite frustrated with my experience so far.
+As someone who only recently started maintaining Neovim plugins, I have been quite frustrated with my experience so far...
 
 ## The current status quo
 
-### A horrible UX
 
-... where users, not plugin authors, have to declare plugin dependencies.
+### 1. A horrible UX
+
+...where users, not plugin authors, have to declare dependencies.
 
 [Here's](https://github.com/junnplus/lsp-setup.nvim#packernvim) an example using `packer.nvim`:
 
@@ -25,21 +26,25 @@ use {
 }
 ```
 
-This shouldn't be the user's responsibility!
-What if dependencies are added or changed? It's the user who has to update their config.
+This shouldn't be the user's responsibility.
 
-### Plugin authors copy/pasting code instead of using libraries
+What if dependencies are added or changed? It's the user who has to update their config or deal with breakage.
 
-... because they don't want their users to have to deal with this horrible UX too much.
+
+### 2. Plugin authors copy/pasting code instead of using libraries
+
+...because they don't want their users to have to deal with this horrible UX.
 
 I've been guilty of doing so myself.
 
-### Instability
+
+### 3. Instability
 
 As far as I know, we currently have no easy way to declare version constraints for dependencies.
-Something that [LuaRocks](https://luarocks.org/) supports, and which definitely should not be left up to the user!
+Something that [LuaRocks](https://luarocks.org/) supports, and which definitely should not be left up to the user.
 
 All of this potentially gets worse with transitive dependencies.
+
 
 ## The vicious cycle
 
@@ -49,17 +54,22 @@ As I see it, we have ourselves a dilemma:
 * Plugin managers don't support LuaRocks properly [because there aren't enough plugins that use it](https://github.com/folke/lazy.nvim/issues/253#issuecomment-1411534276).
 
 This is something I've observed in many fields.
-For example, critics of the electromobility industry have claimed that EVs will never be feasible, because we don't have enough charging stations.
-But which came first? Cars or roads and petrol stations?
+For example, critics of electromobility have claimed that EVs will never be feasible, because we don't have enough charging infrastructure.
+But which came first? Cars, or petrol stations?
 
-## Introducing [`luarocks-tag-release`](https://github.com/marketplace/actions/luarocks-tag-release)
+I'm a strong believer that we need plugin authors to publish their packages to LuaRocks before package managers start supporting it.
+Just like we had cars before petrol stations, and electric vehicles before charging infrastructure.
 
-In an attempted push to alleviate these issues, @teto and I have started the [`nvim-neorocks`](https://github.com/nvim-neorocks/) organisation an released the [`luarocks-tag-release`](https://github.com/marketplace/actions/luarocks-tag-release) GitHub action.
 
-It has the goal of minimising the effort for plugin developers to publish their plugins to LuaRocks,
-and keep the packages up to date.
+## Introducing the [LuaRocks tag release action](https://github.com/marketplace/actions/luarocks-tag-release)
 
-## For plugin developers
+As a catalyst to alleviate these issues, @teto and I have started the [`nvim-neorocks`](https://github.com/nvim-neorocks/) organisation and released the [`luarocks-tag-release`](https://github.com/marketplace/actions/luarocks-tag-release) GitHub action.
+
+The goal is to minimise the effort for developers to release their plugins to LuaRocks,
+and to keep their published packages up to date.
+
+
+### How to get started as a plugin developer?
 
 * All you need is a [LuaRocks account](https://luarocks.org/login) and an [API key](https://luarocks.org/settings/api-keys).
 * Add the API key to your repo's [GitHub actions secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository).
@@ -90,13 +100,13 @@ jobs:
 ```
 
 Whenever you push a tag (expected to adhere to [semantic versioning](https://semver.org/)),
-the workflow will...
+the workflow will:
 
-* Automatically fetch most of the relevant information (summary, license, ...) from GitHub.
-* Generate a rockspec for the release.
-* Run a test to make sure LuaRocks can install your plugin locally.
-* Publish your plugin to LuaRocks
-* Run a test to verify that your plugin can be installed from LuaRocks.
+1. Automatically fetch most of the relevant information (summary, license, ...) from GitHub
+2. Generate a rockspec for the release
+3. Run a test to make sure LuaRocks can install your plugin locally
+4. Publish your plugin to LuaRocks
+5. Run a test to verify that your plugin can be installed from LuaRocks
 
 If you need more flexibility, you can [specify additional inputs](https://github.com/marketplace/actions/luarocks-tag-release#inputs) or even use a [rockspec template](https://github.com/marketplace/actions/luarocks-tag-release#template).
 
@@ -123,22 +133,21 @@ Here are some workflows and PRs you can use for inspiration:
 
 [^1] pull request
 
-## For Neovim users
 
-If you don't maintain your own plugins, but want to see the ecosystem improve, you can suggest the workflow to your favourite plugins, or open a PR.
-In most cases, it's dead-simple to add the workflow. See the above PR examples.
+### What can you do as a Neovim user?
+
+If you don't maintain your own plugins, but want to see the ecosystem improve, you can suggest the workflow to your favourite plugins, or open a pull request.
+In most cases, it's extremely easy to add the workflow. See the above PR examples.
 
 If you run in to problems or have any questions, don't hesitate to [open an issue](https://github.com/nvim-neorocks/luarocks-tag-release/issues) or [start a discussion](https://github.com/nvim-neorocks/luarocks-tag-release/discussions)!
 
-## What's next?
+
+### What's next?
 
 For now, I am experimenting with a fork of LuaRocks, stripped down to the bare minimum needed to install packages.
-I have no idea what that will lead to at this point (if anything).
+I am still uncertain of what that will lead to in the near future.
 
-* Maybe a package manager as a proof-of-concept?
+* Perhaps a package manager as a proof-of-concept?
 * Maybe a package that can use Neovim as an interpreter to run LuaRocks so that it can use Neovim's Lua API in test runs?
 
-It is my firm belief that we need plugin authors to publish their packages to LuaRocks before package managers start supporting it.
-Just like we had cars before roads, and electric vehicles before charging infrastructure.
-
-Let's make this happen!
+Hopeful for the future. Let's make this happen!
