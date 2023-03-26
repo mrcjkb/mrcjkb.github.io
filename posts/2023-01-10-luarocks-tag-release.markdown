@@ -91,7 +91,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: LuaRocks Upload
-        uses: nvim-neorocks/luarocks-tag-release@v2.0.0
+        uses: nvim-neorocks/luarocks-tag-release@v4
         env:
           LUAROCKS_API_KEY: ${{ secrets.LUAROCKS_API_KEY }}
         with: # Optional inputs...
