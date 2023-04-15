@@ -131,7 +131,7 @@ Here are some workflows and PRs you can use for inspiration:
 * [`telescope-manix`](https://github.com/mrcjkb/telescope-manix/blob/master/.github/workflows/release.yml) - an extension that depends on [`telescope.nvim`](https://github.com/nvim-telescope/telescope.nvim/pull/2364)[^1].
 * [`nvim-treesitter`](https://github.com/nvim-treesitter/nvim-treesitter/pull/4109)[^1] - A more complex example that uses a template to build with Make.
 * [`plenary.nvim`](https://github.com/nvim-lua/plenary.nvim/pull/458/files)[^1] - Another example that uses a template so that LuaRocks runs tests.
-* [`fzf-lua`](https://github.com/ibhagwan/fzf-lua/blob/main/.github/workflows/release.yml) - A scheduled workflow that realeases versions based on the number of commits, if there have been new commits since the last run.
+* [`fzf-lua`](https://github.com/ibhagwan/fzf-lua/blob/main/.github/workflows/luarocks-release.yaml) - A scheduled workflow that realeases versions based on the number of commits, if there have been new commits since the last run.
 
 [^1] pull request
 
