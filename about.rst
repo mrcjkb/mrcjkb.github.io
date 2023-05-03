@@ -2,15 +2,19 @@
 title: About
 ---
 
-I'm Marc, a renewable energy systems engineer who has developed a passion for functional
-programming and eventually ended up in the backend team developing software for a `virtual
-power plant <https://www.youtube.com/watch?v=r_kmmAt6CQE>`_ with Haskell_ and Nix_ at tiko_.
+.. image:: https://avatars.githubusercontent.com/u/12857160?v=4
+   :width: 300
+   :align: center
 
-In my spare time, I love running in the forest (and sometimes just walking with my two cats),
+Hi there! I'm Marc, a renewable energy systems engineer with a passion for functional programming.
+I currently work on developing software for a `virtual
+power plant <https://www.youtube.com/watch?v=r_kmmAt6CQE>`_ using Haskell_ and Nix_, as part of the backend team at tiko_.
+
+In my free time, I love running in the forest, taking leisurely walks with my two cats,
 and contributing to the open source community.
-I also maintain a few of `my own open source projects<https://github.com/mrcjkb?tab=repositories&q=&type=source&language=&sort=>`_.
+I also maintain a `a few projects of my own <https://github.com/mrcjkb?tab=repositories&q=&type=source&language=&sort=>`_.
 
-My development environment consists mostly of NixOS_, XMonad_ and Neovim_.
+My development environment consists mainly of NixOS_, XMonad_ and Neovim_, running on a Tuxedo_ computer.
 
 .. _Haskell: https://www.haskell.org/
 .. _Nix: https://nixos.org/
@@ -18,3 +22,4 @@ My development environment consists mostly of NixOS_, XMonad_ and Neovim_.
 .. _NixOS: https://nixos.org/
 .. _XMonad: https://xmonad.org/
 .. _Neovim: https://neovim.io/
+.. _Tuxedo: https://www.tuxedocomputers.com/
