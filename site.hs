@@ -17,6 +17,10 @@ main = hakyll $ do
         route   idRoute
         compile compressCssCompiler
 
+    match "static/*" $ do
+        route   idRoute
+        compile compressCssCompiler
+
     match (fromList ["about.rst", "contact.markdown"]) $ do
         route   $ setExtension "html"
         compile $ pandocCompiler'
