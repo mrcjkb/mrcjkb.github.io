@@ -17,9 +17,9 @@ main = hakyll $ do
         route   idRoute
         compile compressCssCompiler
 
-    match "static/*" $ do
+    match "CNAME" $ do
         route   idRoute
-        compile compressCssCompiler
+        compile copyFileCompiler
 
     match (fromList ["about.rst", "contact.markdown"]) $ do
         route   $ setExtension "html"
