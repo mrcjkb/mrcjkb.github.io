@@ -2,7 +2,7 @@
 title: About
 ---
 
-.. image:: https://avatars.githubusercontent.com/u/12857160?v=4
+.. image:: https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/d24cba8d-d633-4baa-8a7c-a299828b9e80
    :width: 300
    :align: center
 
