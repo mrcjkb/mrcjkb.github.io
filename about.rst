@@ -2,7 +2,7 @@
 title: About
 ---
 
-.. image:: https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/d24cba8d-d633-4baa-8a7c-a299828b9e80
+.. image:: https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/1e739285-f863-4a14-a20a-a85e95db1a5e
    :width: 300
    :align: center
 
