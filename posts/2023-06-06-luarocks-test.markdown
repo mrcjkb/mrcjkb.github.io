@@ -141,6 +141,14 @@ return {
 > The `lpath` is necessary to tell `busted` to look for your plugin's source
 > code in the `lua` directory.
 
+Add the following to your `.gitignore`:
+
+```sh
+/luarocks
+/lua_modules
+/.luarocks
+```
+
 Finally, add a `run-tests.sh` script:
 
 <!-- markdownlint-disable -->
