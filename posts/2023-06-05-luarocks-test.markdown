@@ -9,14 +9,15 @@ tags: neovim, plugin, luarocks, lua, busted, test, plenary
   <a href="https://github.com/nvim-neorocks/neorocks">
     <img src="https://avatars.githubusercontent.com/u/124081866?s=400&u=0da379a468d46456477a1f68048b020cf7a99f34&v=4" alt="neorocks">
   </a>
-  <h2>🏷️🚀🌒</h>
+  <h2>🌒</h>
 </div>
 <!-- markdownlint-restore -->
 
-In my [last post](https://mrcjkb.dev/posts/2023-01-10-luarocks-tag-release.html),
+In my [previous post](https://mrcjkb.dev/posts/2023-01-10-luarocks-tag-release.html),
 I wrote about some pain points in the Neovim plugin ecosystem,
 and introduced the [luarocks-tag-release](https://github.com/marketplace/actions/luarocks-tag-release)
-GitHub action, which allows you to publish your Neovim plugins to [LuaRocks](https://luarocks.org/).
+GitHub action, which allows you to publish your Neovim plugins to [LuaRocks](https://luarocks.org/),
+as a call to address those pain points.
 
 At the end, I stated that I was planning to play around with a few ideas:
 
@@ -54,10 +55,10 @@ Plus, the fact that many plugins use `git clone` to fetch the `HEAD` of plenary.
 
 ## Enter Neovim 0.9
 
-Neovim 0.9 [added support for running lua scripts](https://neovim.io/doc/user/starting.html#-l)
-with the CLI using `-l`.
-Combine this with `-c lua [...]`, and Neovim becomes a full-fledged LuaJIT interpreter that
-includes the [Neovim lua API](https://neovim.io/doc/user/lua.html).
+With the introduction of Neovim 0.9, [you can now leverage the `-l` option](https://neovim.io/doc/user/starting.html#-l)
+to run lua scripts via the command-line interface.
+Combining this with `-c lua [...]`, Neovim transforms into a full-fledged LuaJIT interpreter,
+providing access to the [Neovim lua API](https://neovim.io/doc/user/lua.html).
 
 To test this out, you can create a `sayHello.lua` file with the following content:
 
@@ -117,7 +118,8 @@ build = {
 }
 ```
 
-Next, add a `.busted` file to your project root, with the following content:
+Next, add a `.busted` file to the root of your project.
+This file should contain the following content:
 
 ```lua
 return {
@@ -168,7 +170,7 @@ and forwards any arguments you pass to the script.
 The `.busted` file and the rockspec tell `busted` how to find your plugin
 and its dependencies.
 
-For example, if your tests are in a directory named `tests`, you can call
+To run your tests located in a directory named `tests`, simply execute
 
 ```console
 ./run-tests.sh tests
@@ -180,23 +182,22 @@ a directory named `spec`.
 
 ## Using GitHub Actions to run tests
 
-Since version 5.0, the `luarocks-tag-release` GitHub action will automatically
-run tests if it finds a `.busted` file in the project root.
-By default, it will run [`luarocks test`](https://github.com/luarocks/luarocks/wiki/test)
-with both the stable Neovim release (version 0.9 as of writing)
-and Neovim nightly as the Lua interpreter[^2],
+Starting from version 5.0, the `luarocks-tag-release` GitHub action will automatically
+run tests if it detects a `.busted` file in the project root.
+By default, it will execute [`luarocks test`](https://github.com/luarocks/luarocks/wiki/test)
+with both the stable Neovim release and Neovim nightly as the Lua interpreter[^2],
 before publishing the plugin to LuaRocks.
 
 [^2] `luarocks-tag-release` updates the Neovim interpreters weekly.
 
 There is a [PR](https://github.com/nvim-neorocks/luarocks-tag-release/pull/36) that will
-allow tests to be run without releasing to LuaRocks for each pull request.
+allow the action to run tests for each pull request, without releasing to LuaRocks.
 
 > **Note**
 >
 > `luarocks-tag-release` uses [`neorocks`](https://github.com/nvim-neorocks/neorocks),
 > a LuaRocks [nix](https://nixos.org/) derivation configured to use Neovim, to run the tests.
 
-For plugin authors who do not wish to publish their plugins to LuaRocks,
-I will leave writing a GitHub Action as an exercise 😈.
-
+If you prefer not to publish your plugins to LuaRocks,
+I'll leave the exciting exercise of crafting a custom GitHub Action
+as a challenge for you! 😈
