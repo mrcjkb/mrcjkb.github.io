@@ -158,4 +158,4 @@ Hopeful for the future. Let's make this happen!
 
 ### Follow-up
 
-[Test your Neovim plugins with luarocks & busted](https://mrcjkb.dev/posts/2023-06-06-luarocks-tag-release.html)
+[Test your Neovim plugins with luarocks & busted](https://mrcjkb.dev/posts/2023-06-06-luarocks-test.html)
