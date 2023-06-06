@@ -155,3 +155,7 @@ I am still uncertain of what that will lead to in the near future.
 * Maybe a package that can use Neovim as an interpreter to run LuaRocks so that it can use Neovim's Lua API in test runs?
 
 Hopeful for the future. Let's make this happen!
+
+### Follow-up
+
+[Test your Neovim plugins with luarocks & busted](https://mrcjkb.dev/posts/2023-06-06-luarocks-tag-release.html)
