@@ -32,7 +32,7 @@ But if ADTs sound Greek to you, a straightforward analogy would be [Rust Enums](
 which are, in fact, ADTs. They're powerful constructs allowing versatile and type-safe data modeling.
 
 I want to keep this post short, so I will assume this is enough information
-for you know all the niceties that come with ADTs.
+for you to know all the niceties that come with ADTs.
 
 For a deeper dive, there's a vast sea of resources available for you to explore.
 
