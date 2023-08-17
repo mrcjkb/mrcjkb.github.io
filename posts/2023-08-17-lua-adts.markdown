@@ -1,0 +1,246 @@
+---
+title: Algebraic data types in Lua (Almost)
+tags: neovim, plugin, lua, functional-programming, fp, adt
+---
+
+Lua, in the realm of Neovim, is a curious companion.
+For personal configuration tweaks, it's incredibly responsive, giving me immediate feedback.
+Moreover, when I'm uncertain about an idea's potential,
+Lua offers a forgiving platform for prototyping without commitment.
+
+Yet, as the maintainer of a few plugins, who otherwise works with Haskell professionally,
+I have mixed feelings. Its dynamic typing casts shadows of unpredictability,
+making Neovim plugins susceptible to unexpected bugs at the wrong time.
+
+![](https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/889a75bd-d63d-490f-bcf6-2e6e3b9d9b05){ width=300px }
+
+When it comes to Neovim plugin (and Lua) development, the right tools can be game-changers.
+I'm aware of typed languages that compile to Lua, but here's a native approach.
+Here, I'll delve into my experiences in leveraging [`lua-language-server`](https://github.com/LuaLS/lua-language-server)
+and its support for [type annotations](https://github.com/LuaLS/lua-language-server/wiki/Annotations),
+demonstrating how they can elevate the robustness and expressiveness of your Lua code.
+
+As an example, we will be attempting to define an algebraic data type (ADT),
+and using `lua-language-server` for static type checking.
+
+## What are algebraic data types (ADT)s?
+
+For those steeped in the world of functional languages like Haskell, F#, or OCaml,
+the term ADT might sound familiar. If that's you, feel free to skip ahead.
+
+But if ADTs sound Greek to you, a straightforward analogy would be [Rust Enums](https://doc.rust-lang.org/rust-by-example/custom_types/enum.html),
+which are, in fact, ADTs. They're powerful constructs allowing versatile and type-safe data modeling.
+
+I want to keep this post short, so I will assume this is enough information
+for you know all the niceties that come with ADTs.
+
+For a deeper dive, there's a vast sea of resources available for you to explore.
+
+## Lua type annotations - the basics
+
+As mentioned previously, `lua-language-server` is capable of
+producing diagnostics based on [type annotations](https://github.com/LuaLS/lua-language-server/wiki/Annotations).
+
+Here's a basic example of defining a data type with a `table`:
+
+```lua
+---@class Foo
+---@field bar string
+
+---@type Foo
+x = {
+  bar = "hello",
+}
+```
+
+And now the magic:
+Witness how `lua-language-server` utilizes these annotations to pinpoint type errors within Neovim:
+
+![lua-ls-example](https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/69c884d9-812b-414e-9b95-a83527fcd757){ width=550px }
+
+## Dynamic type annotations
+
+In Lua, we're not restricted to a single type.
+With annotations and runtime checks, we can express flexibility in our type expectations.
+For instance, consider a function that can accept either an instance of `Foo` or a `string`:
+
+```lua
+---@param foo Foo|string
+local function print_foo(foo)
+  if type(foo) == 'string' then
+    print(foo)
+  else
+    print(foo.bar)
+  end
+end
+```
+
+## Towards ADTs
+
+Type annotations also permit the creation of aliases,
+streamlining the way we reference combined types. For instance:
+
+```lua
+---@alias FooOrString Foo|string
+
+---@param foo FooOrString
+local function print_foo(foo)
+```
+
+For those accustomed to Haskell, this syntax might ring a bell.
+Diving a bit deeper, let's consider a more intricate use-case that I've
+[employed in my `neotest-haskell` plugin](https://github.com/mrcjkb/neotest-haskell/blob/c01757f54365208a63f54cea989206060f02b746/lua/neotest-haskell/treesitter.lua#L11).
+Here, I've depicted a type that might refer to an unopened file or, alternatively, its contents:
+
+```lua
+---Reference to a file
+---@class FileRef
+---@field file string
+
+---Reference to a file's content
+---@class FileContentRef
+---@field content string
+
+---@alias TestFile FileRef | FileContentRef
+
+---Read a FileRef.
+---@param file_ref FileRef
+---@return FileContentRef content_ref
+local function to_file_content_ref(file_ref)
+  return {
+    content = lib.files.read(file_ref.file),
+  }
+end
+
+---@param query string|table The tree-sitter query.
+---@param ref TestFile The test file.
+---@return ...
+function treesitter.iter_ts_matches(query, ref)
+  local source
+  if ref.file then
+    ---@cast ref FileRef
+    source = to_file_content_ref(ref)
+  else
+    ---@cast ref FileContentRef
+    source = ref
+  end
+  -- <omitted for brevity> ...
+end
+```
+
+With these annotations, we inch Lua ever closer to the potent expressiveness of ADTs.
+This achieves a harmonious blend of type versatility and precision.
+
+Yet, it's essential to acknowledge certain distinctions compared to real ADTs:
+
+- `FileRef` and `FileContentRef` are independent type definitions, rather than data constructors.
+- `TestFile` is an alias, not a concrete type.
+- Lua doesn't natively facilitate pattern matching.
+
+This boils down to the fact that Haskell and Rust's type systems are [nominal](https://en.wikipedia.org/wiki/Nominal_type_system),
+while Lua's is [structural](https://en.wikipedia.org/wiki/Structural_type_system)[^1].
+
+[^1]: It appears that Lua's union annotations are [inspired by TypeScript](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions).
+
+Nevertheless, it's feasible to simulate basic pattern matching with a function like this one:
+
+```lua
+---@generic T
+---@param ref TestFile
+---@param onFileRef fun(ref:FileRef):T
+---@param onContentRef fun(ref:FileContentRef):T
+---@return T
+local function matchTestFile(ref, onFileRef, onContentRef)
+  return ref.content
+    ---@cast ref FileContentRef
+    and onContentRef(ref)
+    ---@cast ref FileRef
+    or onFileRef(ref)
+end
+```
+
+There's an important caveat to note:
+While both the type annotation capabilities of `lua-language-server` and Neovim's type annotations
+are continually evolving and improving, they're not flawless.
+As of writing this post, the following misalignment can still occur:
+
+```lua
+---@type FileRef
+x = {
+  file = "/path/to/file",
+  content = 5, -- Type-checks and breaks `matchTestFile` at runtime
+}
+```
+
+There is a [feature request](https://github.com/LuaLS/lua-language-server/issues/1990),
+with an active discussion, so I'm optimistic about a resolution in the near future.
+
+I'd also love to see the ability to report diagnostics if variables or functions are not annotated.
+
+In the meantime, it pays to tread with caution.
+
+## Statically type checking your plugins
+
+Diagnostics in your editor are great, but they're not much of a defense if contributors
+or yourself can open PRs that disregard your type constraints.
+The silver lining? `lua-language-server` comes with a command-line interface.
+
+```console
+> lua-language-server --checklevel=Warning --logpath=/tmp --configpath=.luarc.json --check ./lua
+Diagnosis complete, 1 problems found, see /tmp/check.json
+```
+
+Here's what's happening:
+
+- The `--configpath` option points to a configuration file,
+  which can specify paths to dependencies, such as plugins and Neovim's runtime path,
+  among other things.
+- `--check` specifies a file or a project directory.
+- If there are any diagnostics (according to the `--checklevel`),
+  `lua-language-server` will log a diagnostics report, check.json, inside the directory provided to
+  `--logpath`.
+
+To make this actionable in your workflow,
+I've crafted two utilities that integrate with GitHub Actions for static type-checking:
+
+### For Nix enthusiasts
+
+For those in the Nix ecosystem, I've introduced a `lua-ls` hook
+to the [`pre-commit-hooks-nix`](https://github.com/cachix/pre-commit-hooks.nix) framework.
+This serves dual purposes: as a git pre-commit hook and for Nix checks.
+I personally prefer this for my projects, though some optimization on the `lua-ls` pre-commit hook is on my to-do list.
+If you're developing Neovim plugins, consider [my template repository](https://github.com/mrcjkb/nvim-lua-nix-plugin-template).
+
+Why I prefer this approach:
+Any GitHub Actions can easily be reproduced locally, assuming you've
+[set up Nix](https://nixos.org/download#download-nix) and have [flakes enabled](https://nixos.wiki/wiki/Flakes).
+
+### For the broader audience
+
+For those not on the Nix train, I've got you covered with a [simple GitHub action, named `lua-typecheck-action`](https://github.com/marketplace/actions/lua-typecheck-action).
+The setup is straightforward (albeit more limited), driven by a [GitHub workflow YAML](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions) ([eww](https://noyaml.com/)).
+
+[![](https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/804f8300-4589-41d9-8461-5e5c076d5eb3){ width=450px }](https://noyaml.com/)
+
+I must mention that my focus has shifted away from this action, so major updates might be sparse.
+While there's no direct support for dependencies, [a workaround exists](https://github.com/mrcjkb/lua-typecheck-action/issues/3#issuecomment-1418273692).
+
+P.S. A plugin that I recommend adding as a dependency for `lua-ls` type-checking
+(as well as in your editor) is [`neodev.nvim`](https://github.com/folke/neodev.nvim).
+It is regularly updated with Neovim API type annotations for Neovim stable and nightly.
+
+## Wrapping up
+
+Embracing tools like `lua-language-server` can significantly enhance our experience with Lua,
+while still allowing for rapid prototyping and ease of configuration.
+Although Lua might not naturally possess the rich type systems of languages like Haskell and Rust,
+with the right techniques, we can attempt to approximate their rigor and reliability.
+Here's to safer, more expressive Lua coding in the future!
+
+## Dive Deeper
+
+Inspired by this exploration into ADTs in Lua? I'd love to see how you apply these concepts:
+
+- Try it out: Use these techniques in your own Neovim plugins.
+- Share: Found a new approach or insight? Spread the word.
+- Connect: Have feedback or questions? Feel free [to open an issue on GitHub](https://github.com/mrcjkb/nvim-lua-nix-plugin-template/issues).
