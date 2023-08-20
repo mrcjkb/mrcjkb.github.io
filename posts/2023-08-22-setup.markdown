@@ -1,0 +1,338 @@
+---
+title: Rethinking the `setup` convention in Neovim. Is it time for a paradigm shift?
+tags: neovim, plugin, lua, dependencies
+---
+
+In the ever-evolving Neovim plugin ecosystem, the usage and appropriateness of a `setup` function
+for initializing plugins has become somewhat a hot topic.
+This discussion has sparked differing opinions among plugin developers.
+
+Like some other plugin authors, I've recently found myself reverting back to the more traditional
+Vim convention of employing `vim.g.<namespaced_table>` or `vim.g.<namespaced_option>`
+for configuration, and leaning on the inherent mechanisms of Neovim for initialization.
+
+In this post, I aim to unpack my perspective on this debate,
+considering both the present landscape and the potential trajectory of the Neovim plugin ecosystem.
+
+
+## Drawing parallels: The design journey of my first Neovim plugin
+
+While [`haskell-tools.nvim`](https://github.com/mrcjkb/haskell-tools.nvim/) wasn't technically my first
+Neovim plugin, it holds the distinction of being the first that wasn't merely an adapter or extension
+for another.
+If the name resonates with you, it's likely because I drew inspiration from the popular
+[`rust-tools.nvim`](https://github.com/simrat39/rust-tools.nvim).
+Both plugins, though tailored for different programming languages, share a parallel purpose.
+
+`rust-tools`, for historical reasons, depends on `nvim-lspconfig`.
+It relies on a `setup` function to kickstart the `lspconfig.rust_analyzer.setup`, among other tings.
+As I was relatively new to Lua and Neovim plugin development, this structure felt like a logical
+blueprint for `haskell-tools`.
+Which led to [this module](https://github.com/mrcjkb/haskell-tools.nvim/blob/3ac5c19a0742cc80c65bab9525ac3e7a9c54ab93/lua/haskell-tools/init.lua):
+
+```lua
+local M = {
+  config = nil,
+  lsp = nil,
+  hoogle = nil,
+  repl = nil,
+}
+
+function M.setup(opts)
+  -- initialization omitted for brevity
+end
+
+return M
+```
+
+As a Haskell developer, seeing state - initialized with `nil` - was profoundly unsettling.
+Despite my reservations, the `setup` paradigm was omnipresent in most Lua plugins I was using.
+So I decided to go along with it. This, as [**@HiPhish** puts it very well](https://gitlab.com/HiPhish/rainbow-delimiters.nvim/-/blob/master/doc/rainbow-delimiters.txt?ref_type=heads#L150),
+was [cargo cult programming](http://www.jargon.net/jargonfile/c/cargocultprogramming.html).
+
+## Tracing the origins of `setup`
+
+Neovim embraced Lua as a first-class citizen [with version `0.5`](https://neovim.io/news/2021/07).
+Though the initial API wasn't as powerful as the one we enjoy today,
+it marked the onset of an explosive growth in Lua plugins.
+However, the roots of the `setup` pattern trace back even earlier. Neovim contributor [**@noracalli**
+introduced a library designed "to standardize the creation of Lua based plugins in Neovim."](https://github.com/norcalli/neovim-plugin),
+almost a year before Lua's elevated status.
+
+From this effort, `setup` was born:
+
+> - Plugins shouldn't use the api unless the user explicitly asks them to by calling a function.
+>   - For one time initialization for a plugin, this is achieved by having a `setup()` function
+>     which will do any initialization required unrelated to key mappings, commands, and events.
+>   - Every other call should be encapsulated by functions exported by the plugin.
+
+Observant readers may notice a subtle difference between the foundational approach and the
+conventions that are prevalent today.
+In **@norcalli**'s blueprint, [configuration and initialization were decoupled](https://github.com/norcalli/neovim-plugin/blob/master/examples/test.lua),
+with an `export` function designated for configuration and `setup` exclusively managing initialization.
+In contrast, many of today's plugins meld these two by passing a configuration table directly to `setup`.
+We will revisit this later on...
+
+## Neovim 0.7 - Lua everywhere!
+
+Remember, this `setup` concept originated before Lua's deep integration in Neovim.
+Well before `init.lua` and auto-loading Lua files on the [`runtimepath`](https://neovim.io/doc/user/options.html#'runtimepath')
+arrived with [version 0.7](https://neovim.io/news/2022/04).
+This version brought with it many improvements to the Lua API.
+And it was a few months after the release of Neovim 0.7 that [**@mfussenegger** posted
+an article](https://zignar.net/2022/11/06/structuring-neovim-lua-plugins/#require-performance)
+which made me realise I had stuctured my `haskell-tools` plugin wrong.
+
+His article (which I strongly recommend reading) differentiates between global and filetype-specific plugins.
+For Lua plugins, he presents some advantages and disadvantages of various structuring approaches
+and two configuration methods:
+
+- A `setup` function, which is "useful if the plugin performs expensive initialization or if
+  what it initializes depends on the configuration", but forces users to `require` the plugin,
+  which may impact startup if not managed properly.
+- A single global configuration table, like `vim.g.foobar_settings`, which omits the
+  need for a `require`, and provides direct access across multiple modules, but may be harder to
+  validate.
+
+## `haskell-tools` redesigned
+
+Continuing the trajectory of Neovim 0.7’s advancements, [`filetype.lua`](https://neovim.io/news/2022/04#filetypelua),
+emerged as a notable (experimental) addition. By the time Neovim 0.9 rolled around,
+it had effectively replaced the older `filetype.vim`.
+Initially, `haskell-tools.setup` employed autocommands for Haskell and Cabal files.
+This approach could bog down startup times, especially if multiple plugins adopted it.
+Addressing this, I rolled out the `start_or_attach` function for more efficient initialization,
+tailored for lazy invocation within users' `after/ftplugin/<haskell|cabal>.lua` scripts.
+This shift also severed the plugin's tie to `nvim-lspconfig` for LSP tasks.
+But, in a nod to [backward compatibility](https://www.snoyman.com/blog/2018/04/stop-breaking-compatibility/),
+the original `setup` function remained, bringing along its inherent codebase intricacies.
+
+After recent consideration, I have finally decided to release version 2 of `haskell-tools.nvim`.
+
+## The pitfalls of `setup`
+
+@mfussenegger clarifies in his article that he does not advocate against a `setup` function.
+While I think his article is a great read, I have personally come to the conclustion that
+`setup` as we know it must burn. Here's why...
+
+### A false sense of "consistency"
+
+The most common argument I hear in favour of defaulting to `setup` is "consistency". In fact,
+today's most popular Lua plugin manager, [`lazy.nvim`, defaults to
+calling `require(MAIN).setup(opts)`](https://github.com/folke/lazy.nvim#-plugin-spec)
+in the absence of a `config` option.
+But as we've delved into before, the term "setup" is used ambiguously across plugins.
+For instance, while plugins like `nvim-treesitter` and `telescope.nvim` lean on Neovim's inherent
+initialization and employ `setup` solely for configuration,
+others like `nvim-cmp` and `nvim-lspconfig` use the same term for both roles.
+This facade of uniform naming masks its varied functionalities, leading to false consistency.
+
+Furthermore, global configuration variables or tables, prefixed with a namespace specific to the plugin,
+are both consistent and compatible with the Vimscript plugin ecosystem.
+
+### `require`-ing plugins at startup can break your config
+
+To create robust plugins, it's imperative to differentiate between configuration and initialization.
+This becomes particularly crucial when plugins have interdependencies.
+Careless `require` calls during the configuration phase can induce unexpected hiccups,
+primarily influenced by the order of initialization.
+The best practice? Make such calls deferred or lazy.
+
+Let's illustrate with an example:
+
+#### Not ideal
+
+```lua
+-- May fail if foo is not initialized
+-- before lspconfig
+local bar = require('foo').bar
+require('lspconfig').clangd.setup {
+  on_attach = function(_)
+    bar.do_something()
+  end,
+}
+```
+
+#### Better
+
+```lua
+require('lspconfig').clangd.setup {
+  on_attach = function(_)
+    -- Will fail only if foo is never initialized
+    require('foo').bar..do_something()
+  end,
+}
+```
+
+Now, imagine a scenario where `nvim-lspconfig` isn't even present or loaded.
+Neovim's startup would choke on `require('lspconfig')`,
+halting further configurations even if the plugin isn't immediately required.
+
+However, if `nvim-lspconfig` leveraged `filetype.lua` and `vim.g`, things would look different:
+
+- Configuration snippet:
+
+```lua
+vim.g.lspconfig = {
+  clangd = {
+    filetypes = {'c', 'cpp'},
+    -- additional settings...
+  }
+}
+```
+
+- The initialization script (orchestrated by the plugin, not the user):
+
+```lua
+-- ftplugin/c.lua
+local clangd = vim.g.lspconfig and vim.g.lspconfig.clangd
+if clangd.filetypes and vim.tbl_contains(clangd.filetypes, 'c') then
+  -- config validations and clangd initialization performed and cached in 'lspconfig.cache.clangd'
+  require('lspconfig.cache.clangd')
+  require('lspconfig.configs').clangd.launch()
+end
+```
+
+In such a setup, Neovim doesn't break a sweat,
+even if `nvim-lspconfig` remains unloaded when `init.lua` processes `vim.g.lspconfig_clangd`.
+
+### Automatic dependency management's Achilles' Heel
+
+Efforts to resolve [pain points](https://mrcjkb.dev/posts/2023-01-10-luarocks-tag-release.html)
+in Neovim's plugin ecosystem have gravitated towards automatic dependency management.
+
+Two notable initiatives[^1] are:
+
+- [Hosting plugins on LuaRocks.org](https://luarocks.org/labels/neovim)
+  and [installing them with `luarocks`](https://github.com/ntbbloodbath/rocks.nvim).
+- [The `pkg.json` (`packspec`) format specification](https://packspec.org/spec.html)
+  for plugin metadata and dependencies.
+
+[^1]: Notably, these work in progress approaches [are not mutually exclusive](https://github.com/nvim-neorocks/luarocks-tag-release/discussions/73#discussioncomment-6552899).
+
+Given Vim's architecture (and by extension Neovim's), there's a specific [initialization order](https://neovim.io/doc/user/starting.html#initialization)
+where user preferences load before plugins. Ring a bell?
+
+
+A lurking issue arises when plugins blend their configuration and initialization phases in one
+`setup` function.
+By doing this and handing over the initialization reins to the user,
+the core advantages of automatic dependency management risk getting undermined.
+
+It should be a plugin's duty to articulate its dependencies rather than leaving it to users or plugin managers.
+In the same spirit, plugins should defer their own initialization until all their dependencies are up and running.
+
+Take a look at [this snippet from `neodev.nvim`'s](https://github.com/folke/neodev.nvim/tree/v2.5.2#-setup)[^2] README:
+
+[^2]: For the record, I'm quite a fan of this plugin.
+
+```lua
+-- IMPORTANT: make sure to setup neodev BEFORE lspconfig
+require("neodev").setup({
+  -- add any options here, or leave empty to use the default settings
+})
+
+-- then setup your lsp server as usual
+local lspconfig = require('lspconfig')
+
+-- example to setup lua_ls and enable call snippets
+lspconfig.lua_ls.setup({
+  settings = {
+    Lua = {
+      completion = {
+        callSnippet = "Replace"
+      }
+    }
+  }
+})
+```
+
+Highlighting this, had there been a distinct line between configuration and initialization responsibilities,
+warnings like these wouldn't be necessary.
+
+### But... Global variables are an antipattern?
+
+Global mutable state is an antipattern. We're talking about read-only global configuration variables.
+
+### What about a `configure` function?
+
+While there's no inherent issue with a `configure` function (or even a `setup` function solely
+dedicated to configuration), its use can indeed simplify the validation of user configurations.
+
+So, why do I caution against its adoption?
+
+Remember the evolution of @norcalli's `export`/`setup` pattern into a unified function?
+The crux of the matter lies in the fact that Lua functions can be inherently impure.
+This means there's nothing stopping plugin developers from crafting their `configure` functions
+in less than ideal ways, such as:
+
+```lua
+M.configure(opts) = function
+  -- <do something with opts>
+  vim.api.nvim_launch_nuclear_warhead()
+end
+```
+
+On the other hand, employing a `vim.g` variable offers an implicit assurance of its singular role
+in configuration.
+
+
+## Enter a world without `setup`
+
+In light of these considerations, it is increasingly clear that the Neovim community may benefit
+from moving beyond the `setup` function, or at least the way it’s been traditionally employed.
+The `setup` function, as it stands today, isn't the villain.
+However, the consequences of its misuse, ambiguity, and lack of clear separation of concerns in
+many plugins are real issues that need addressing.
+
+### So, what should the ideal look like?
+
+1. **Decoupled Configuration and Initialization**:
+  This has been reiterated multiple times,
+  but it's worth emphasizing. Configuration should be separated from initialization.
+  This ensures that configuration is pure, readable, and unlikely to produce unexpected side effects.
+
+1. **Utilize `vim.g` for Configuration**:
+  As has been demonstrated, `vim.g` provides an ideal means to store plugin configuration.
+  It aligns well with Vim conventions, provides an implicit assurance of its configuration-only role,
+  and circumvents the need to `require` the plugin at startup.
+
+1. **Smart Initialization**:
+  Instead of relying on users or external mechanisms for activation,
+  tools should employ intelligent self-initialization.
+  For example, leveraging constructs like `filetype.lua` can defer their loading until genuinely required.
+  However, for plugins with minimal startup footprints, lazy loading might be excessive.
+
+1. **Explicit Dependency Declaration**:
+  Plugins should clearly specify any dependencies,
+  and the initialization of such plugins should ensure that these dependencies are loaded before proceeding.
+
+### Some caveats
+
+No approach is without its drawbacks. Some possible criticisms of moving away from `setup` are:
+
+- **Learning Curve**:
+  This change would introduce a learning curve,
+  especially for newer users who are already accustomed to the `setup` pattern.
+  On the other hand, this approach discourages cargo cult programming and promotes genuine understanding.
+
+- **Migration**:
+  Existing plugins that heavily rely on the `setup` pattern might need significant rewrites.
+  While this is an investment in future robustness, it might be daunting for some plugin authors
+  and users alike.
+
+- **Performance**:
+  While unlikely, there's always the potential for performance implications when making a sweeping change.
+  However, any such implications would likely be minimal and far outweighed by the benefits.
+
+### In Conclusion
+
+In the constantly evolving world of Neovim plugins, it's important to reflect on established patterns
+and consider their effectiveness. The `setup` pattern, while helpful in certain contexts,
+has shown potential pitfalls.
+
+By championing a clear division between configuration and initialization and embracing tools like `vim.g` for the former,
+we pave the way for a more robust, predictable, and user-friendly Neovim plugin ecosystem.
+
+As developers and users of Neovim plugins, it's up to us to guide this evolution in a direction that
+benefits the entire community. Let's strive for clarity, simplicity, and robustness as we move forward!
