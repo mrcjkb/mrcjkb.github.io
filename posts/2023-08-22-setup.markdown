@@ -243,6 +243,8 @@ A lurking issue arises when plugins blend their configuration and initialization
 By doing this and handing over the initialization reins to the user,
 the core advantages of automatic dependency management risk getting undermined.
 
+![](https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/898f9b14-9608-4314-a671-62d81008473b){ width=500 }
+
 It should be a plugin's duty to articulate its dependencies rather than leaving it to users or plugin managers.
 In the same spirit, plugins should defer their own initialization until all their dependencies are up and running.
 
@@ -415,9 +417,9 @@ benefits the entire community. Let's strive for clarity, simplicity, and robustn
 
 ## Credits
 
-Thanks to these wonderful people for proof-reading and input:
+Thanks to the [neorocks](https://github.com/nvim-neorocks) surgeons for proof-reading and input:
 
-- [**@teto**](https://teto.github.io/about.html)
+- [**@teto**](https://github.com/teto)
 - [**@vhyrro**](https://github.com/vhyrro)
 - [**@NTBBloodbath**](https://github.com/NTBBloodbath)
 - [**@vigoux**](https://github.com/vigoux)
