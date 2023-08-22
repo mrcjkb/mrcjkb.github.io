@@ -278,6 +278,29 @@ warnings like these wouldn't be necessary.
 
 Global mutable state is an antipattern. We're talking about read-only global configuration variables.
 
+### What about namespace clashes and clutter?
+
+The traditional way in Vimscript was to have a `vim.g.<some_option>` for each configuration option,
+typically prefixed with the plugin name, to avoid namespace clashes.
+This can introduce a lot of clutter. Fortunately, in Lua, `vim.g.foo_bar` can also be a single table,
+which is no more likely to clash than a module name.
+
+```lua
+-- Instead of:
+vim.g.plugin_name_option1 = "value1"
+vim.g.plugin_name_option2 = "value2"
+vim.g.plugin_name_option3 = "value3"
+
+-- We can have:
+vim.g.plugin_name = {
+  option1 = "value1",
+  option2 = "value2",
+  option3 = "value3"
+}
+```
+
+This approach keeps the global namespace clean and reduces the chances of clashes.
+
 ### What about a `configure` function?
 
 While there's no inherent issue with a `configure` function (or even a `setup` function solely
