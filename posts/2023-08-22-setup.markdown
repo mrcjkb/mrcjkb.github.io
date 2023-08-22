@@ -25,7 +25,7 @@ If the name resonates with you, it's likely because I drew inspiration from the 
 Both plugins, though tailored for different programming languages, share a parallel purpose.
 
 `rust-tools`, for historical reasons, depends on `nvim-lspconfig`.
-It relies on a `setup` function to kickstart the `lspconfig.rust_analyzer.setup`, among other tings.
+It relies on a `setup` function to kickstart the `lspconfig.rust_analyzer.setup`, among other things.
 As I was relatively new to Lua and Neovim plugin development, this structure felt like a logical
 blueprint for `haskell-tools`.
 Which led to [this module](https://github.com/mrcjkb/haskell-tools.nvim/blob/3ac5c19a0742cc80c65bab9525ac3e7a9c54ab93/lua/haskell-tools/init.lua):
