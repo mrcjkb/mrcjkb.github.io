@@ -115,6 +115,8 @@ After recent consideration, I have finally decided to release version 2 of `hask
 While I think his article is a great read, I have personally come to the conclustion that
 `setup` as we know it must burn. Here's why...
 
+![](https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/fd85e99a-4dac-4f3d-88f7-83f6246a1a62)
+
 ### A false sense of "consistency"
 
 The most common argument I hear in favour of defaulting to `setup` is "consistency". In fact,
