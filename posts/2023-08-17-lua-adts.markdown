@@ -32,7 +32,7 @@ But if ADTs sound Greek to you, a straightforward analogy would be [Rust Enums](
 which are, in fact, ADTs. They're powerful constructs allowing versatile and type-safe data modeling.
 
 I want to keep this post short, so I will assume this is enough information
-for you know all the niceties that come with ADTs.
+for you to know all the niceties that come with ADTs.
 
 For a deeper dive, there's a vast sea of resources available for you to explore.
 
@@ -244,3 +244,7 @@ Inspired by this exploration into ADTs in Lua? I'd love to see how you apply the
 - Try it out: Use these techniques in your own Neovim plugins.
 - Share: Found a new approach or insight? Spread the word.
 - Connect: Have feedback or questions? Feel free [to open an issue on GitHub](https://github.com/mrcjkb/nvim-lua-nix-plugin-template/issues).
+
+## Credits
+
+- Thanks to [Owen](https://owen.cafe/) for input and proof-reading.
