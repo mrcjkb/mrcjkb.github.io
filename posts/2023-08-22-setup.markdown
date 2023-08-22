@@ -134,6 +134,24 @@ are both consistent and compatible with the Vimscript plugin ecosystem.
 
 ![](https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/2de0fa4f-adec-45c9-862d-78756c444bae){ width=550px }
 
+### The mirage of `setup`-driven expectations
+
+The `setup` convention in Neovim plugins has inadvertently set certain expectations among users.
+A notable interaction I had with a user when I decided to remove it from `haskell-tools.nvim` showcased this:
+the absence of a familiar `setup` function made the configuration feel "strange" and "out of place" to them.
+Further, they worried it would prevent them from conditionally loading or initializing the plugin.
+
+This sentiment points to a broader issue.
+The prevalent use of the `setup` function has conditioned users to expect it as a standard
+for configuring and initializing plugins.
+This expectation can overshadow alternative, and sometimes more flexible, configuration methods.
+
+Neovim itself offers [built-in mechanisms for conditional plugin loading](https://neovim.io/doc/user/repeat.html#packages),
+and many plugin managers support similar functionalities.
+However, the ubiquity of the `setup` convention might be inadvertently limiting our view and adaptability,
+leading us to perceive deviations as anomalies, even when they may offer superior flexibility.
+
+
 ### `require`-ing plugins at startup can break your config
 
 To create robust plugins, it's imperative to differentiate between configuration and initialization.
