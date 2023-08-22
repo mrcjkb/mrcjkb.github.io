@@ -423,4 +423,4 @@ Thanks to the [neorocks](https://github.com/nvim-neorocks) surgeons for proof-re
 - [**@vhyrro**](https://github.com/vhyrro)
 - [**@NTBBloodbath**](https://github.com/NTBBloodbath)
 - [**@vigoux**](https://github.com/vigoux)
-- [**@AloofPolo**](https://www.twitch.tv/aloofpolo)
+- [**@vsedov**](https://github.com/vsedov)
