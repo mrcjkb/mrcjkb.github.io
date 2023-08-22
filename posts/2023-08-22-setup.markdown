@@ -375,7 +375,33 @@ No approach is without its drawbacks. Some possible criticisms of moving away fr
   While unlikely, there's always the potential for performance implications when making a sweeping change.
   However, any such implications would likely be minimal and far outweighed by the benefits.
 
-### In Conclusion
+### Guided migration: A step-by-step plan
+
+For plugin maintainers, especially those with a large user base,
+the thought of introducing breaking changes can be daunting.
+However, with a structured approach, you can ensure a smooth transition for both you and your users.
+Here's a suggested plan to phase out the `setup` function:
+
+
+1. **Embrace a Rigorous Release Cycle**:
+   Start by tagging releases with [semantic versions](https://semver.org/) and/or maintaining a stable
+   branch if you haven't already. This provides a clear framework for introducing changes.
+
+2. **Prioritize Separation of Concerns**:
+   If your plugin conflates configuration and initialization in a single function,
+   consider splitting these concerns.
+   Initially, transition to a `setup` function dedicated only to configuration while optimizing initialization.
+   This change is unlikely to disrupt most users.
+
+3. **Support Both APIs Temporarily**:
+   By concurrently supporting both the old and new APIs, you provide users with a transition period.
+   Consider implementing prompts (with an option to disable them) to guide users towards the new method.
+
+4. **Introduce the New API in a Separate Branch**:
+   Create a branch that omits the `setup` function, and actively promote this to your users.
+   Encourage them to switch and provide feedback.
+
+## In Conclusion
 
 In the constantly evolving world of Neovim plugins, it's important to reflect on established patterns
 and consider their effectiveness. The `setup` pattern, while helpful in certain contexts,
