@@ -115,7 +115,7 @@ After recent consideration, I have finally decided to release version 2 of `hask
 While I think his article is a great read, I have personally come to the conclustion that
 `setup` as we know it must burn. Here's why...
 
-![](https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/fd85e99a-4dac-4f3d-88f7-83f6246a1a62)
+![](https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/fd85e99a-4dac-4f3d-88f7-83f6246a1a62){ width=550px }
 
 ### A false sense of "consistency"
 
@@ -131,6 +131,8 @@ This facade of uniform naming masks its varied functionalities, leading to false
 
 Furthermore, global configuration variables or tables, prefixed with a namespace specific to the plugin,
 are both consistent and compatible with the Vimscript plugin ecosystem.
+
+![](https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/2de0fa4f-adec-45c9-862d-78756c444bae){ width=550px }
 
 ### `require`-ing plugins at startup can break your config
 
