@@ -183,7 +183,7 @@ require('lspconfig').clangd.setup {
 require('lspconfig').clangd.setup {
   on_attach = function(_)
     -- Will fail only if foo is never initialized
-    require('foo').bar..do_something()
+    require('foo').bar.do_something()
   end,
 }
 ```
@@ -218,7 +218,7 @@ end
 ```
 
 In such a setup, Neovim doesn't break a sweat,
-even if `nvim-lspconfig` remains unloaded when `init.lua` processes `vim.g.lspconfig_clangd`.
+even if `nvim-lspconfig` remains unloaded when `init.lua` processes `vim.g.lspconfig.clangd`.
 
 ### Automatic dependency management's Achilles' Heel
 
