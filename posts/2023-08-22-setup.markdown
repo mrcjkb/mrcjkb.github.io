@@ -47,7 +47,7 @@ return M
 
 As a Haskell developer, seeing state - initialized with `nil` - was profoundly unsettling.
 Despite my reservations, the `setup` paradigm was omnipresent in most Lua plugins I was using.
-So I decided to go along with it. This, as [**@HiPhish** puts it very well](https://gitlab.com/HiPhish/rainbow-delimiters.nvim/-/blob/master/doc/rainbow-delimiters.txt?ref_type=heads#L150),
+So I decided to go along with it. This, as [**@HiPhish** puts it very well](https://gitlab.com/HiPhish/rainbow-delimiters.nvim/-/blob/7506a7d6/doc/rainbow-delimiters.txt?ref_type=heads#L150),
 was [cargo cult programming](http://www.jargon.net/jargonfile/c/cargocultprogramming.html).
 
 ## Tracing the origins of `setup`
@@ -55,9 +55,11 @@ was [cargo cult programming](http://www.jargon.net/jargonfile/c/cargocultprogram
 Neovim embraced Lua as a first-class citizen [with version `0.5`](https://neovim.io/news/2021/07).
 Though the initial API wasn't as powerful as the one we enjoy today,
 it marked the onset of an explosive growth in Lua plugins.
-However, the roots of the `setup` pattern trace back even earlier. Neovim contributor [**@noracalli**
+However, the roots of the `setup` pattern trace back even earlier. Neovim contributor [**@norcalli**
 introduced a library designed "to standardize the creation of Lua based plugins in Neovim."](https://github.com/norcalli/neovim-plugin),
-almost a year before Lua's elevated status.
+almost a year before Lua's elevated status[^1].
+
+[^1]: The credit for tracing the origins of `setup` goes to [**@RRethy**](https://github.com/RRethy/vim-illuminate/issues/112#issuecomment-1221213332).
 
 From this effort, `setup` was born:
 
@@ -112,7 +114,7 @@ After recent consideration, I have finally decided to release version 2 of `hask
 ## The pitfalls of `setup`
 
 @mfussenegger clarifies in his article that he does not advocate against a `setup` function.
-While I think his article is a great read, I have personally come to the conclustion that
+While I think his article is a great read, I have personally come to the conclusion that
 `setup` as we know it must burn. Here's why...
 
 ![](https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/fd85e99a-4dac-4f3d-88f7-83f6246a1a62){ width=550px }
@@ -223,14 +225,14 @@ even if `nvim-lspconfig` remains unloaded when `init.lua` processes `vim.g.lspco
 Efforts to resolve [pain points](https://mrcjkb.dev/posts/2023-01-10-luarocks-tag-release.html)
 in Neovim's plugin ecosystem have gravitated towards automatic dependency management.
 
-Two notable initiatives[^1] are:
+Two notable initiatives[^2] are:
 
 - [Hosting plugins on LuaRocks.org](https://luarocks.org/labels/neovim)
   and [installing them with `luarocks`](https://github.com/ntbbloodbath/rocks.nvim).
 - [The `pkg.json` (`packspec`) format specification](https://packspec.org/spec.html)
   for plugin metadata and dependencies.
 
-[^1]: Notably, these work in progress approaches [are not mutually exclusive](https://github.com/nvim-neorocks/luarocks-tag-release/discussions/73#discussioncomment-6552899).
+[^2]: Notably, these work in progress approaches [are not mutually exclusive](https://github.com/nvim-neorocks/luarocks-tag-release/discussions/73#discussioncomment-6552899).
 
 Given Vim's architecture (and by extension Neovim's), there's a specific [initialization order](https://neovim.io/doc/user/starting.html#initialization)
 where user preferences load before plugins. Ring a bell?
@@ -244,9 +246,9 @@ the core advantages of automatic dependency management risk getting undermined.
 It should be a plugin's duty to articulate its dependencies rather than leaving it to users or plugin managers.
 In the same spirit, plugins should defer their own initialization until all their dependencies are up and running.
 
-Take a look at [this snippet from `neodev.nvim`'s](https://github.com/folke/neodev.nvim/tree/v2.5.2#-setup)[^2] README:
+Take a look at [this snippet from `neodev.nvim`'s](https://github.com/folke/neodev.nvim/tree/v2.5.2#-setup)[^3] README:
 
-[^2]: For the record, I'm quite a fan of this plugin.
+[^3]: For the record, I'm quite a fan of this plugin.
 
 ```lua
 -- IMPORTANT: make sure to setup neodev BEFORE lspconfig
@@ -297,7 +299,10 @@ end
 
 On the other hand, employing a `vim.g` variable offers an implicit assurance of its singular role
 in configuration.
-
+While this might introduce complexity in validating configurations, Neovim offers a robust solution:
+the [`:checkhealth`](https://neovim.io/doc/user/pi_health.html#health-dev) mechanism.
+For an illustration of its effective utilization, [see this example](https://github.com/mrcjkb/haskell-tools.nvim/blob/2e06bf7fb458356913f1fc7961f1d3c21c7163a1/lua/haskell-tools/health.lua#L225)
+from my `haskell-tools.nvim` plugin.
 
 ## Enter a world without `setup`
 
