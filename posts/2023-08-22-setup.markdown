@@ -412,3 +412,13 @@ we pave the way for a more robust, predictable, and user-friendly Neovim plugin 
 
 As developers and users of Neovim plugins, it's up to us to guide this evolution in a direction that
 benefits the entire community. Let's strive for clarity, simplicity, and robustness as we move forward!
+
+## Credits
+
+Thanks to these wonderful people for proof-reading and input:
+
+- [**@teto**](https://teto.github.io/about.html)
+- [**@vhyrro**](https://github.com/vhyrro)
+- [**@NTBBloodbath**](https://github.com/NTBBloodbath)
+- [**@vigoux**](https://github.com/vigoux)
+- [**@AloofPolo**](https://www.twitch.tv/aloofpolo)
