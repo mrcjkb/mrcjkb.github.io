@@ -244,3 +244,7 @@ Inspired by this exploration into ADTs in Lua? I'd love to see how you apply the
 - Try it out: Use these techniques in your own Neovim plugins.
 - Share: Found a new approach or insight? Spread the word.
 - Connect: Have feedback or questions? Feel free [to open an issue on GitHub](https://github.com/mrcjkb/nvim-lua-nix-plugin-template/issues).
+
+## Credits
+
+- Thanks to [Owen](https://owen.cafe/) for input and proof-reading.
