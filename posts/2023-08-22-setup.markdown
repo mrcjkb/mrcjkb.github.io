@@ -276,6 +276,13 @@ lspconfig.lua_ls.setup({
 Highlighting this, had there been a distinct line between configuration and initialization responsibilities,
 warnings like these wouldn't be necessary.
 
+### Better static type checking
+
+If you're like me, and you [make good use of static type checking](https://mrcjkb.dev/posts/2023-08-17-lua-adts.html)
+to improve the robustness of your code base, you will almost certainly benefit from not having
+to worry about whether or not parts of your plugin have been initialized by the user.
+
+
 ### What about namespace clashes and clutter?
 
 The traditional way in Vimscript was to have a `vim.g.<some_option>` for each configuration option,
@@ -386,6 +393,15 @@ No approach is without its drawbacks. Some possible criticisms of moving away fr
   be needed to address such concerns.
 
 [^4]: Thanks to [**@echanovski**](https://github.com/echasnovski/) for pointing this out to me.
+
+### [Update] Change isn't chaos
+
+Addressing reservations some readers have about embracing change; to draw an analogy:
+
+Just as transitioning away from fossil fuels doesn't plunge us into perpetual darkness,
+or shifting to a more sustainable diet doesn't lead to a world overrun by unchecked animal populations,
+the Neovim community won't descend into chaos if we reconsider the use of `setup`.
+Change can be daunting, but it's also a path to improvement.
 
 ### Guided migration: A step-by-step plan
 
