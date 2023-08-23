@@ -276,9 +276,32 @@ lspconfig.lua_ls.setup({
 Highlighting this, had there been a distinct line between configuration and initialization responsibilities,
 warnings like these wouldn't be necessary.
 
-### But... Global variables are an antipattern?
+### Safeguarding initialization in dynamic environments
 
-Global mutable state is an antipattern. We're talking about read-only global configuration variables.
+If you're like me, and [rely heavily on static type checking](https://mrcjkb.dev/posts/2023-08-17-lua-adts.html)
+to fortify your code base, you'll appreciate the confidence in not worrying about whether parts of your plugin
+are properly initialized.
+
+Recall how I hinted at the beginning of this post that `nil` is evil?
+Consider this example from [a plugin I use](https://github.com/gbprod/yanky.nvim),
+which features a [`telescope.nvim` extension](https://github.com/nvim-telescope/telescope.nvim/wiki/Extensions).
+From a configuration standpoint, the typical way to add a Telescope extension looks something like this:
+
+```lua
+require('telescope').load_extension('yank_history')
+```
+
+Now, this is what happens if a user tries to invoke `:Telescope yank_history` before calling `require('yanky').setup()`:
+
+![](https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/d8d32e26-a6a6-48f5-b8ba-d3ed0c5707c9){ width=550px }
+
+If `setup` has side-effects, it puts plugin authors in a tricky spot: They cannot confidently delegate
+control to users and simultaneously ensure that every component initializes when needed.
+
+This issue illustrates a broader challenge: without type safety or strict initialization processes,
+we run into unpredictable behaviors. While dynamic languages like Lua offer flexibility,
+they also introduce the potential for such oversights, especially when initialization processes
+are handed over to the end-users.
 
 ### What about namespace clashes and clutter?
 
@@ -329,6 +352,13 @@ the [`:checkhealth`](https://neovim.io/doc/user/pi_health.html#health-dev) mecha
 For an illustration of its effective utilization, [see this example](https://github.com/mrcjkb/haskell-tools.nvim/blob/2e06bf7fb458356913f1fc7961f1d3c21c7163a1/lua/haskell-tools/health.lua#L225)
 from my `haskell-tools.nvim` plugin.
 
+### But... Global variables are an antipattern?
+
+Yes and no. Global **mutable** state is frowned upon as an antipattern.
+However, we are discussing read-only global configuration tables here.
+It's common knowledge among developers, even those with little experience, that mutating global variables is a bad idea.
+Yet, it's surprising how many seasoned developers overlook the importance of isolating side-effects.
+
 ## Enter a world without `setup`
 
 In light of these considerations, it is increasingly clear that the Neovim community may benefit
@@ -376,6 +406,22 @@ No approach is without its drawbacks. Some possible criticisms of moving away fr
 - **Performance**:
   While unlikely, there's always the potential for performance implications when making a sweeping change.
   However, any such implications would likely be minimal and far outweighed by the benefits.
+
+- **`vim.g` is a Vimscript/Lua bridge**:
+  As such, it may not be suitable for all use cases. For example, [metatables are erased](https://github.com/neovim/neovim/issues/12544#issuecomment-1116794687)[^4].
+  Although I consider metatables excessive for plugin configuration, a dedicated Lua API might
+  be needed to address such concerns.
+
+[^4]: Thanks to [**@echanovski**](https://github.com/echasnovski/) for pointing this out to me.
+
+### [Update] Change isn't chaos
+
+Addressing reservations some readers have about embracing change; to draw an analogy:
+
+Just as transitioning away from fossil fuels doesn't plunge us into perpetual darkness,
+or shifting to a more sustainable diet doesn't lead to a world overrun by unchecked animal populations,
+the Neovim community won't descend into chaos if we reconsider the use of `setup`.
+Change can be daunting, but it's also a path to improvement.
 
 ### Guided migration: A step-by-step plan
 
