@@ -276,10 +276,6 @@ lspconfig.lua_ls.setup({
 Highlighting this, had there been a distinct line between configuration and initialization responsibilities,
 warnings like these wouldn't be necessary.
 
-### But... Global variables are an antipattern?
-
-Global mutable state is an antipattern. We're talking about read-only global configuration variables.
-
 ### What about namespace clashes and clutter?
 
 The traditional way in Vimscript was to have a `vim.g.<some_option>` for each configuration option,
@@ -328,6 +324,10 @@ While this might introduce complexity in validating configurations, Neovim offer
 the [`:checkhealth`](https://neovim.io/doc/user/pi_health.html#health-dev) mechanism.
 For an illustration of its effective utilization, [see this example](https://github.com/mrcjkb/haskell-tools.nvim/blob/2e06bf7fb458356913f1fc7961f1d3c21c7163a1/lua/haskell-tools/health.lua#L225)
 from my `haskell-tools.nvim` plugin.
+
+### But... Global variables are an antipattern?
+
+Global mutable state is an antipattern. We're talking about read-only global configuration variables.
 
 ## Enter a world without `setup`
 
