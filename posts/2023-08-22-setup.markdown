@@ -276,12 +276,32 @@ lspconfig.lua_ls.setup({
 Highlighting this, had there been a distinct line between configuration and initialization responsibilities,
 warnings like these wouldn't be necessary.
 
-### Better static type checking
+### Safeguarding initialization in dynamic environments
 
-If you're like me, and you [make good use of static type checking](https://mrcjkb.dev/posts/2023-08-17-lua-adts.html)
-to improve the robustness of your code base, you will almost certainly benefit from not having
-to worry about whether or not parts of your plugin have been initialized by the user.
+If you're like me, and [rely heavily on static type checking](https://mrcjkb.dev/posts/2023-08-17-lua-adts.html)
+to fortify your code base, you'll appreciate the confidence in not worrying about whether parts of your plugin
+are properly initialized.
 
+Recall how I hinted at the beginning of this post that `nil` is evil?
+Consider this example from [a plugin I use](https://github.com/gbprod/yanky.nvim),
+which features a [`telescope.nvim` extension](https://github.com/nvim-telescope/telescope.nvim/wiki/Extensions).
+From a configuration standpoint, the typical way to add a Telescope extension looks something like this:
+
+```lua
+require('telescope').load_extension('yank_history')
+```
+
+Now, this is what happens if a user tries to invoke `:Telescope yank_history` before calling `require('yanky').setup()`:
+
+![](https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/d8d32e26-a6a6-48f5-b8ba-d3ed0c5707c9){ width=550px }
+
+If `setup` has side-effects, it puts plugin authors in a tricky spot: They cannot confidently delegate
+control to users and simultaneously ensure that every component initializes when needed.
+
+This issue illustrates a broader challenge: without type safety or strict initialization processes,
+we run into unpredictable behaviors. While dynamic languages like Lua offer flexibility,
+they also introduce the potential for such oversights, especially when initialization processes
+are handed over to the end-users.
 
 ### What about namespace clashes and clutter?
 
