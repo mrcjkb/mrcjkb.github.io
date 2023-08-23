@@ -327,7 +327,10 @@ from my `haskell-tools.nvim` plugin.
 
 ### But... Global variables are an antipattern?
 
-Global mutable state is an antipattern. We're talking about read-only global configuration variables.
+Yes and no. Global **mutable** state is frowned upon as an antipattern.
+However, we are discussing read-only global configuration tables here.
+It's common knowledge among developers, even those with little experience, that mutating global variables is a bad idea.
+Yet, it's surprising how many seasoned developers overlook the importance of isolating side-effects.
 
 ## Enter a world without `setup`
 
