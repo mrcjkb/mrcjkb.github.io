@@ -175,6 +175,8 @@ x = {
 There is a [feature request](https://github.com/LuaLS/lua-language-server/issues/1990),
 with an active discussion, so I'm optimistic about a resolution in the near future.
 
+[Update]: Support for `---@class (exact)` annotations [has been added](https://github.com/LuaLS/lua-language-server/commit/c2018e05de0e9eebadbe094357d22883a608fdf5).
+
 I'd also love to see the ability to report diagnostics if variables or functions are not annotated.
 
 In the meantime, it pays to tread with caution.
