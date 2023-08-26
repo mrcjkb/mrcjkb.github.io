@@ -215,17 +215,16 @@ run tests if it detects a `.busted` file in the project root.
 By default, it will execute [`luarocks test`](https://github.com/luarocks/luarocks/wiki/test)
 with both the stable Neovim release and Neovim nightly as the Lua interpreter[^2],
 before publishing the plugin to LuaRocks.
+You can configure the action to run not only on tags, but also on pull requests (without
+publishing to LuaRocks.org).
 
 [^2]: `luarocks-tag-release` updates the Neovim interpreters weekly.
-
-There is a [PR](https://github.com/nvim-neorocks/luarocks-tag-release/pull/36) that will
-allow the action to run tests for each pull request, without releasing to LuaRocks.
 
 > **Note**
 >
 > `luarocks-tag-release` uses [`neorocks`](https://github.com/nvim-neorocks/neorocks),
-> a (slightly over-engineered) LuaRocks [nix](https://nixos.org/) derivation
-> configured to use Neovim, to run the tests.
+> a (slightly over-engineered) `luarocks` [nix](https://nixos.org/) derivation
+> configured to use Neovim's Lua interpreter, to run the tests.
 
 If you prefer not to publish your plugins to LuaRocks,
 I'll leave the exciting exercise of crafting a custom GitHub Action
