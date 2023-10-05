@@ -388,10 +388,17 @@ many plugins are real issues that need addressing.
   tools should employ intelligent self-initialization.
   For example, leveraging constructs like `filetype.lua` can defer their loading until genuinely required.
   However, for plugins with minimal startup footprints, lazy loading might be excessive.
+  For plugins like `telescope.nvim` and `nvim-cmp` that support extensions, it would be nifty if
+  Neovim provided a specification akin to `:h runtimepath`, so that extensions could register
+  themselves automatically.
+  Something along the lines of `extension/<plugin>/register.lua`[^5], which plugins could source
+  at runtime.
 
 1. **Explicit Dependency Declaration**:
   Plugins should clearly specify any dependencies,
   and the initialization of such plugins should ensure that these dependencies are loaded before proceeding.
+
+[^5]: This is analogous to `queries/<language>/<query-file>.scm`.
 
 ### Some caveats
 
@@ -412,11 +419,11 @@ No approach is without its drawbacks. Some possible criticisms of moving away fr
   However, any such implications would likely be minimal and far outweighed by the benefits.
 
 - **`vim.g` is a Vimscript/Lua bridge**:
-  As such, it may not be suitable for all use cases. For example, [metatables are erased](https://github.com/neovim/neovim/issues/12544#issuecomment-1116794687)[^5].
+  As such, it may not be suitable for all use cases. For example, [metatables are erased](https://github.com/neovim/neovim/issues/12544#issuecomment-1116794687)[^6].
   Although I consider metatables excessive for plugin configuration, a dedicated Lua API might
   be needed to address such concerns.
 
-[^5]: Thanks to [**@echanovski**](https://github.com/echasnovski/) for pointing this out to me.
+[^6]: Thanks to [**@echanovski**](https://github.com/echasnovski/) for pointing this out to me.
 
 ### [Update] Change isn't chaos
 
