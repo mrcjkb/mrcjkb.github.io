@@ -427,6 +427,17 @@ or shifting to a more sustainable diet doesn't lead to a world overrun by unchec
 the Neovim community won't descend into chaos if we reconsider the use of `setup`.
 Change can be daunting, but it's also a path to improvement.
 
+### [Update] Some additional points by @HiPhish
+
+- `setup` locks users into Lua. Some people prefer Vimscript for configuration.
+- Many `setup` functions do too much.
+  There's no need for inconsistent custom DSLs when Neovim already
+  provides better mechanisms
+  (like [`<Plug>`](https://neovim.io/doc/user/usr_41.html#using-%3CPlug%3E) for keymaps).
+- A Lua function for configuration forces it all into one place.
+  Maybe I want separate files for all my mappings and
+  for all my custom highlight groups.
+
 ### Guided migration: A step-by-step plan
 
 For plugin maintainers, especially those with a large user base,
