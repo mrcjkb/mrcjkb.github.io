@@ -132,7 +132,9 @@ others like `nvim-cmp` and `nvim-lspconfig` use the same term for both roles.
 This facade of uniform naming masks its varied functionalities, leading to false consistency.
 
 Furthermore, global configuration variables or tables, prefixed with a namespace specific to the plugin,
-are both consistent and compatible with the Vimscript plugin ecosystem.
+are both consistent and compatible with Vimscript[^2].
+
+[^2]: Some Neovim users find Vimscript more ergonomic for configuration than Lua.
 
 ![](https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/2de0fa4f-adec-45c9-862d-78756c444bae){ width=550px }
 
@@ -227,14 +229,14 @@ even if `nvim-lspconfig` remains unloaded when `init.lua` processes `vim.g.lspco
 Efforts to resolve [pain points](https://mrcjkb.dev/posts/2023-01-10-luarocks-tag-release.html)
 in Neovim's plugin ecosystem have gravitated towards automatic dependency management.
 
-Two notable initiatives[^2] are:
+Two notable initiatives[^3] are:
 
 - [Hosting plugins on LuaRocks.org](https://luarocks.org/labels/neovim)
   and [installing them with `luarocks`](https://github.com/ntbbloodbath/rocks.nvim).
 - [The `pkg.json` (`packspec`) format specification](https://packspec.org/spec.html)
   for plugin metadata and dependencies.
 
-[^2]: Notably, these work in progress approaches [are not mutually exclusive](https://github.com/nvim-neorocks/luarocks-tag-release/discussions/73#discussioncomment-6552899).
+[^3]: Notably, these work in progress approaches [are not mutually exclusive](https://github.com/nvim-neorocks/luarocks-tag-release/discussions/73#discussioncomment-6552899).
 
 Given Vim's architecture (and by extension Neovim's), there's a specific [initialization order](https://neovim.io/doc/user/starting.html#initialization)
 where user preferences load before plugins. Ring a bell?
@@ -250,9 +252,9 @@ the core advantages of automatic dependency management risk getting undermined.
 It should be a plugin's duty to articulate its dependencies rather than leaving it to users or plugin managers.
 In the same spirit, plugins should defer their own initialization until all their dependencies are up and running.
 
-Take a look at [this snippet from `neodev.nvim`'s](https://github.com/folke/neodev.nvim/tree/v2.5.2#-setup)[^3] README:
+Take a look at [this snippet from `neodev.nvim`'s](https://github.com/folke/neodev.nvim/tree/v2.5.2#-setup)[^4] README:
 
-[^3]: For the record, I'm quite a fan of this plugin.
+[^4]: For the record, I'm quite a fan of this plugin.
 
 ```lua
 -- IMPORTANT: make sure to setup neodev BEFORE lspconfig
@@ -309,7 +311,7 @@ are handed over to the end-users.
 
 The traditional way in Vimscript was to have a `vim.g.<some_option>` for each configuration option,
 typically prefixed with the plugin name, to avoid namespace clashes.
-This can introduce a lot of clutter. Fortunately, in Lua, `vim.g.foo_bar` can also be a single table,
+This can introduce a lot of clutter. Fortunately, in Lua, `vim.g.foo_bar` can also be a single table (or a function that returns a table),
 which is no more likely to clash than a module name.
 
 ```lua
@@ -410,11 +412,11 @@ No approach is without its drawbacks. Some possible criticisms of moving away fr
   However, any such implications would likely be minimal and far outweighed by the benefits.
 
 - **`vim.g` is a Vimscript/Lua bridge**:
-  As such, it may not be suitable for all use cases. For example, [metatables are erased](https://github.com/neovim/neovim/issues/12544#issuecomment-1116794687)[^4].
+  As such, it may not be suitable for all use cases. For example, [metatables are erased](https://github.com/neovim/neovim/issues/12544#issuecomment-1116794687)[^5].
   Although I consider metatables excessive for plugin configuration, a dedicated Lua API might
   be needed to address such concerns.
 
-[^4]: Thanks to [**@echanovski**](https://github.com/echasnovski/) for pointing this out to me.
+[^5]: Thanks to [**@echanovski**](https://github.com/echasnovski/) for pointing this out to me.
 
 ### [Update] Change isn't chaos
 
