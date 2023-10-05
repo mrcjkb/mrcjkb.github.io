@@ -188,7 +188,9 @@ require('lspconfig').clangd.setup {
 }
 ```
 
-Now, imagine a scenario where `nvim-lspconfig` isn't even present or loaded.
+Now, imagine a scenario where `nvim-lspconfig` isn't even present or loaded
+(e.g. when using a single configuration on multiple devices with different
+sets of plugins).
 Neovim's startup would choke on `require('lspconfig')`,
 halting further configurations even if the plugin isn't immediately required.
 
