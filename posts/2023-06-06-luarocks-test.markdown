@@ -169,7 +169,7 @@ a directory named `spec`.
 
 Or if you want to run a single test file:
 
-```
+```bash
 luarocks test spec/path_to_file.lua --local
 # or
 busted spec/path_to_file.lua
