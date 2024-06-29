@@ -6,8 +6,8 @@ tags: neovim, plugin, luarocks, lua, busted, test, plenary
 <!-- markdownlint-disable -->
 <br />
 <div align="center">
-  <a href="https://github.com/nvim-neorocks/neorocks">
-    <img src="https://avatars.githubusercontent.com/u/124081866?s=400&u=0da379a468d46456477a1f68048b020cf7a99f34&v=4" alt="neorocks">
+  <a href="https://github.com/nvim-neorocks/nvim-busted-action">
+    <img src="https://avatars.githubusercontent.com/u/124081866?s=400&u=0da379a468d46456477a1f68048b020cf7a99f34&v=4" alt="nvim-busted-action">
   </a>
   <h2>🌒</h>
 </div>
@@ -36,9 +36,9 @@ Popular plugin templates still use `plenary-test` in their CI.
 
 For example:
 
-- [nvim-lua/nvim-lua-plugin-template](https://github.com/nvim-lua/nvim-lua-plugin-template/blob/57565ed685c1fe2d16022b2d128092becac802eb/.github/workflows/tests.yml#L26)
 - [ellisonleao/nvim-plugin-template](https://github.com/ellisonleao/nvim-plugin-template/blob/29d9752/Makefile)
 - [m00qek/plugin-template.nvim](https://github.com/m00qek/plugin-template.nvim/blob/704ad7b/test/Makefile)
+- [nvim-lua/nvim-lua-plugin-template](https://github.com/nvim-lua/nvim-lua-plugin-template/blob/57565ed685c1fe2d16022b2d128092becac802eb/.github/workflows/tests.yml#L26) (Now uses `busted`)
 
 What are the downsides of using `plenary-test`?
 
@@ -90,13 +90,13 @@ As it turns out, it's quite easy to run `busted` tests using Neovim 0.9+ as the 
   and also install `LuaJIT` or `Lua 5.1`.
   The version doesn't matter, since we'll be using Neovim as the interpreter.
   But `luarocks` needs a real Lua installation that exposes its C header files to
-  install dependencies.
+  install certain dependencies.
 
 ### Preparing your plugin
 
 #### 1. Add a `.rockspec` file
 
-If your plugin has any dependencies, add a [rockspec](https://github.com/luarocks/luarocks/wiki/Rockspec-format)
+Add a [rockspec](https://github.com/luarocks/luarocks/wiki/Rockspec-format)
 named `<my-plugin>-scm-1.rockspec`[^1] to your project's root.
 
 [^1]: Replace `<my-plugin>` with the name of your plugin.
@@ -110,7 +110,7 @@ version = 'scm-1'
 
 test_dependencies = {
   'lua >= 5.1',
-  'plenary.nvim',
+  'nlua',
   'nui.nvim',
 }
 
@@ -136,6 +136,7 @@ return {
   _all = {
     coverage = false,
     lpath = "lua/?.lua;lua/?/init.lua",
+    lua = "nlua",
   },
   default = {
     verbose = true,
@@ -148,61 +149,31 @@ return {
 
 > **Note**
 >
-> The `lpath` is necessary to tell `busted` to look for your plugin's source
-> code in the `lua` directory.
+> - The `lpath` is necessary to tell `busted` to look for your plugin's source
+>   code in the `lua` directory.
+> - `lua = "nlua"` runs your tests with [`nlua`](https://github.com/mfussenegger/nlua)
+>   (a Neovim-Lua CLI adapter) as the Lua interpreter.
 
-#### 3. Add luarocks project files to `.gitignore`
+#### 3. Run your tests
 
-Add the following to your `.gitignore`:
+That's it! You can run your tests with
 
-```sh
-/luarocks
-/lua_modules
-/.luarocks
-```
-
-#### 4. Tell busted to use Neovim as a lua interpreter
-
-Finally, add a `run-tests.sh` script:
-
-<!-- markdownlint-disable -->
-```sh
-#!/bin/sh
-BUSTED_VERSION="2.1.2-3"
-luarocks init
-luarocks install busted "$BUSTED_VERSION"
-luarocks config --scope project lua_version 5.1
-nvim -u NONE \
-  -c "lua package.path='lua_modules/share/lua/5.1/?.lua;lua_modules/share/lua/5.1/?/init.lua;'..package.path;package.cpath='lua_modules/lib/lua/5.1/?.so;'..package.cpath;local k,l,_=pcall(require,'luarocks.loader') _=k and l.add_context('busted','$BUSTED_VERSION')" \
-  -l "lua_modules/lib/luarocks/rocks-5.1/busted/$BUSTED_VERSION/bin/busted" "$@"
-```
-<!-- markdownlint-restore -->
-
-and make it executable:
-
-```console
-chmod +x run-tests.sh
-git update-index --chmod=+x run-tests.sh
-```
-
-That's it! The script uses `luarocks` to install `busted` and configures
-Neovim to be able to find it using the `-c` argument.
-It then runs `busted` with the `-l` argument,
-and forwards any arguments you pass to the script.
-The `.busted` file and the rockspec tell `busted` how to find your plugin
-and its dependencies.
-By passing [`-u NONE`](https://neovim.io/doc/user/starting.html),
-we tell Neovim to skip loading vimrc files and plugins.
-
-To run your tests located in a directory named `tests`, simply execute
-
-```console
-./run-tests.sh tests
+```bash
+luarocks test --local
+# or
+busted
 ```
 
 Without any arguments, `busted` looks for `*_spec.lua` files in
 a directory named `spec`.
 
+Or if you want to run a single test file:
+
+```
+luarocks test spec/path_to_file.lua --local
+# or
+busted spec/path_to_file.lua
+```
 
 ## Using GitHub Actions to run tests
 
@@ -210,30 +181,13 @@ So far, this post has discussed using `busted` locally for testing Neovim plugin
 However, to ensure thorough testing, compatibility, and bug detection across different environments,
 it's essential to make this approach compatible with CI workflows like GitHub Actions.
 
-Starting from version 5.0, the `luarocks-tag-release` GitHub action will automatically
-run tests if it detects a `.busted` file in the project root.
-By default, it will execute [`luarocks test`](https://github.com/luarocks/luarocks/wiki/test)
-with both the stable Neovim release and Neovim nightly as the Lua interpreter[^2],
-before publishing the plugin to LuaRocks.
-You can configure the action to run not only on tags, but also on pull requests (without
-publishing to LuaRocks.org).
-
-[^2]: `luarocks-tag-release` updates the Neovim interpreters weekly.
-
-> **Note**
->
-> `luarocks-tag-release` uses [`neorocks`](https://github.com/nvim-neorocks/neorocks),
-> a (slightly over-engineered) `luarocks` [nix](https://nixos.org/) derivation
-> configured to use Neovim's Lua interpreter, to run the tests.
-
-If you prefer not to publish your plugins to LuaRocks,
-I'll leave the exciting exercise of crafting a custom GitHub Action
-as a challenge for you! 😈
+For that, you can use the [nvim-busted-action](https://github.com/nvim-neorocks/nvim-busted-action),
+which will take care of all the setup for you.
 
 ## Moving forward
 
 If this has motivated you to try out using `luarocks` and `busted` to test your Neovim plugins,
-I'd love to [hear your feedback](https://github.com/nvim-neorocks/luarocks-tag-release/discussions/categories/feedback)!
+I'd love to [hear your feedback](https://github.com/nvim-neorocks/nvim-busted-action/discussions/categories/ideas)!
 
 - Have you run into any issues?
 - Is there still something Neovim-specific that `plenary-test` provides,
@@ -244,3 +198,8 @@ Personally, I would like to see LuaRocks being able to run using Neovim,
 without having to install Lua.
 This possibility doesn't seem far-fetched, especially considering that
 [there are other communities that would also benefit from such an integration](https://github.com/luarocks/luarocks/issues/1499#issuecomment-1492486727).
+
+> **Note**
+>
+> This post has been updated to use [`nlua`](https://github.com/mfussenegger/nlua),
+> instead of creating a busted wrapper script manually.
