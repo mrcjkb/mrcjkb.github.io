@@ -31,7 +31,12 @@
     flake-utils,
     pre-commit-hooks,
   }: let
-    supportedSystems = ["x86_64-linux"];
+    supportedSystems = [
+      "x86_64-linux"
+      "aarch64-linux"
+      "aarch64-darwin"
+      "x86_64-darwin"
+    ];
   in
     flake-utils.lib.eachSystem supportedSystems (
       system: let
