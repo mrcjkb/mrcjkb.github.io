@@ -1,6 +1,7 @@
 ---
 title: Test your Neovim plugins with luarocks & busted
 tags: neovim, plugin, luarocks, lua, busted, test, plenary
+class: container
 ---
 
 <!-- markdownlint-disable -->

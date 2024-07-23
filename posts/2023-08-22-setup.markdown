@@ -1,6 +1,7 @@
 ---
 title: Rethinking the `setup` convention in Neovim. Is it time for a paradigm shift?
 tags: neovim, plugin, lua, dependencies
+class: container
 ---
 
 In the ever-evolving Neovim plugin ecosystem, the usage and appropriateness of a `setup` function

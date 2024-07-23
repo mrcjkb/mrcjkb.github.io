@@ -25,3 +25,4 @@ hie.yaml
 result
 _cache/
 _site/
+files/*

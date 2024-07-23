@@ -15,6 +15,7 @@
   };
 
   inputs = {
+    cv.url = "github:mrcjkb/cv";
     haskellNix.url = "github:input-output-hk/haskell.nix";
     nixpkgs.follows = "haskellNix/nixpkgs-unstable";
     flake-utils.url = "github:numtide/flake-utils";
@@ -27,6 +28,7 @@
   outputs = {
     self,
     nixpkgs,
+    cv,
     haskellNix,
     flake-utils,
     pre-commit-hooks,
@@ -68,6 +70,8 @@
           ];
         };
 
+        cv-pkg = cv.packages.${system}.default;
+
         flake = pkgs.hsPkgs.flake {};
 
         mrcjkbs-site = flake.packages."mrcjkbs-site:exe:site";
@@ -81,7 +85,7 @@
               ".git"
               ".github"
             ]
-            ./.;
+            self;
           # LANG and LOCALE_ARCHIVE are fixes pulled from the community:
           #   https://github.com/jaspervdj/hakyll/issues/614#issuecomment-411520691
           #   https://github.com/NixOS/nix/issues/318#issuecomment-52986702
@@ -93,12 +97,18 @@
             "${pkgs.glibcLocales}/lib/locale/locale-archive";
 
           buildPhase = ''
+            runHook preBuild
+            mkdir files
+            cp ${cv-pkg}/* files/
             ${mrcjkbs-site}/bin/site build --verbose
+            runHook postBuild
           '';
 
           installPhase = ''
+            runHook preInstall
             mkdir -p "$out/dist"
             cp -a _site/. "$out/dist"
+            runHook postInstall
           '';
         };
       in

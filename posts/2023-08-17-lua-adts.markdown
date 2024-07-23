@@ -1,6 +1,7 @@
 ---
 title: Algebraic data types in Lua (Almost)
 tags: neovim, plugin, lua, functional-programming, fp, adt
+class: container
 ---
 
 Lua, in the realm of Neovim, is a curious companion.

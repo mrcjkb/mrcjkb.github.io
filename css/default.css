@@ -1,10 +1,22 @@
+/* Base styles */
 html {
   font-size: 62.5%;
 }
 
 body {
   font-size: 1.6rem;
+  font-family: sans-serif;
   color: #000;
+  margin: 0;
+  padding: 0;
+}
+
+/* Container class for width management */
+.container {
+  width: 90%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
 }
 
 header {
@@ -53,8 +65,6 @@ article .header {
 
 @media (max-width: 319px) {
   body {
-    width: 90%;
-    margin: 0;
     padding: 0 5%;
   }
   header {
@@ -82,8 +92,6 @@ article .header {
 
 @media (min-width: 320px) {
   body {
-    width: 90%;
-    margin: 0;
     padding: 0 5%;
   }
   header {
@@ -111,8 +119,6 @@ article .header {
 
 @media (min-width: 640px) {
   body {
-    width: 60rem;
-    margin: 0 auto;
     padding: 0;
   }
   header {
@@ -139,3 +145,4 @@ article .header {
     font-size: 1.8rem;
   }
 }
+
