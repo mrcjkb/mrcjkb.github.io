@@ -3,6 +3,7 @@
 
   nixConfig = {
     allow-import-from-derivation = "true";
+    # TODO: Migrate to cabal2nix
     extra-substituters = [
       "https://cache.iog.io"
       "https://cache.zw3rk.com" # https://github.com/input-output-hk/haskell.nix/issues/1408
