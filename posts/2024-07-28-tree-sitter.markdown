@@ -174,3 +174,12 @@ Welcome to a new era of flexibility and stability!
 > as a [nvim-treesitter-legacy-api](https://luarocks.org/modules/neorocks/nvim-treesitter-legacy-api)
 > rock that provides the module systems for plugins that still depend on it,
 > without adding queries that could be out-of-sync with the luarocks parsers to the runtimepath.
+
+> **Note for plugin authors**
+>
+> While luarocks supports loading multiple versions
+> of the same lua dependency, this does not translate
+> to tree-sitter parsers.
+> Neovim will use the first parser it finds on the runtimepath.
+> For this reason, we currently don't recommend that plugin authors
+> pin parser dependencies. You should leave that up to your users for now.
