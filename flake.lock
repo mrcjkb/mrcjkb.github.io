@@ -212,11 +212,11 @@
     "hackage": {
       "flake": false,
       "locked": {
-        "lastModified": 1739579010,
-        "narHash": "sha256-bgENCypknzmlsNdnUVK7tW1GKitYMFAOrErTcuewDMo=",
+        "lastModified": 1740183780,
+        "narHash": "sha256-K9tM16okADvZdd2cZ0g4LxPSAz5OR9z9OBKyNFze4CQ=",
         "owner": "input-output-hk",
         "repo": "hackage.nix",
-        "rev": "8e0217ce16b03a7e4e3751dc5577aa8498a6cac7",
+        "rev": "ee3f0eee1d1e95a8cc5e99ce19a5c1b58566b98b",
         "type": "github"
       },
       "original": {
@@ -228,11 +228,11 @@
     "hackage-for-stackage": {
       "flake": false,
       "locked": {
-        "lastModified": 1739579000,
-        "narHash": "sha256-IFoCm65Mzr90YptIbz+l1LpbGVWhRrQjOsZ6mC/K3X0=",
+        "lastModified": 1740183770,
+        "narHash": "sha256-1BKKj4bxjo8yhPZKzc3WqgYvDCQwFq5yCfl2EXKvR2w=",
         "owner": "input-output-hk",
         "repo": "hackage.nix",
-        "rev": "66a75c17c1a312b66ed27f8263661d41f10465b6",
+        "rev": "14107efc045f04b6d487a7889a3c451ec47406be",
         "type": "github"
       },
       "original": {
@@ -278,11 +278,11 @@
         "stackage": "stackage"
       },
       "locked": {
-        "lastModified": 1739617708,
-        "narHash": "sha256-dEH07wnBFaM/nCl7dNFHAnaAmZmTpK4wkeTnQt5DlGs=",
+        "lastModified": 1740185491,
+        "narHash": "sha256-o0nBJqNA4x2r7Gn5AXgkk73H3cNGZYgC7U/grXhSv3c=",
         "owner": "input-output-hk",
         "repo": "haskell.nix",
-        "rev": "fe9f1e6b75eaa0adb2c80925413ac4488322a158",
+        "rev": "4b723bfac41d8ac61dbc9a4ca47b5507c67b6911",
         "type": "github"
       },
       "original": {
@@ -656,11 +656,11 @@
     "stackage": {
       "flake": false,
       "locked": {
-        "lastModified": 1739578269,
-        "narHash": "sha256-qs0I3JIc1wGyTLcwq4PMQUaQ2hC2Yrn8XIrQ7nmuwts=",
+        "lastModified": 1740096702,
+        "narHash": "sha256-fwXgQnLUbL3U8091RaskwGeTe0pRLCaAPh8ZkIiaTBc=",
         "owner": "input-output-hk",
         "repo": "stackage.nix",
-        "rev": "ff39c1b5a985f8d22d3bfd5e5439039263075303",
+        "rev": "64d492737ba6c3eecf7f81dc9184dc8c1482fd06",
         "type": "github"
       },
       "original": {
