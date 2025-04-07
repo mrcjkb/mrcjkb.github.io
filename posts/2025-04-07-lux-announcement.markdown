@@ -136,3 +136,9 @@ If you have any questions or issues, feel free to reach out in [the GitHub discu
 or [our issue tracker](https://github.com/nvim-neorocks/lux/issues). Cheers! :)
 
 The Lux Team
+
+## License
+
+- Lux is licensed under [MIT](https://github.com/nvim-neorocks/lux/blob/master/LICENSE).
+- The Lux logo © 2025 by Kai Jakobi is licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+
