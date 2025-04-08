@@ -1,135 +1,150 @@
 {
   description = "My hakyll website";
 
-  nixConfig = {
-    allow-import-from-derivation = "true";
-    # TODO: Migrate to cabal2nix
-    extra-substituters = [
-      "https://cache.iog.io"
-      "https://cache.zw3rk.com" # https://github.com/input-output-hk/haskell.nix/issues/1408
-    ];
-    extra-trusted-public-keys = [
-      "hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ="
-      "loony-tools:pr9m4BkM/5/eSTZlkQyRt57Jz7OMBxNSUiMC4FkcNfk="
-    ];
-  };
-
   inputs = {
-    cv.url = "github:mrcjkb/cv";
-    haskellNix.url = "github:input-output-hk/haskell.nix";
-    nixpkgs.follows = "haskellNix/nixpkgs-unstable";
-    flake-utils.url = "github:numtide/flake-utils";
-    pre-commit-hooks = {
-      url = "github:cachix/pre-commit-hooks.nix";
+    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    hix = {
+      url = "github:tek/hix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    cv = {
+      url = "github:mrcjkb/cv";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    flake-parts.url = "github:hercules-ci/flake-parts";
+    git-hooks = {
+      url = "github:cachix/git-hooks.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
-  outputs = {
-    self,
-    nixpkgs,
-    cv,
-    haskellNix,
-    flake-utils,
-    pre-commit-hooks,
-  }: let
-    supportedSystems = [
-      "x86_64-linux"
-      "aarch64-linux"
-      "aarch64-darwin"
-      "x86_64-darwin"
-    ];
-  in
-    flake-utils.lib.eachSystem supportedSystems (
-      system: let
-        overlay = self: _: {
-          hsPkgs = self.haskell-nix.project' {
-            src = builtins.path {
-              path = ./.;
-              name = "mrcjkbs-site";
-            };
-            compiler-nix-name = "ghc925";
-            shell = {
-              buildInputs = [
-                mrcjkbs-site
-              ];
-              tools = {
-                cabal = "latest";
-                hlint = "latest";
-                haskell-language-server = "latest";
-              };
-            };
-          };
+  outputs = inputs @ {self, ...}:
+    inputs.hix ({
+      config,
+      lib,
+      ...
+    }: let
+      sourceFilter = root: with lib.fileset; toSource {
+        inherit root;
+        fileset = fileFilter (file: lib.any file.hasExt [ "cabal" "hs" "md" ]) root;
+      };
+      pname = "mrcjkbs-site";
+      system = config.pkgs.system;
+      cv-pkg = inputs.cv.packages.${system}.default;
+    in {
+      compiler = "ghc96";
+      # generate a Cabal file from Nix config even if there is one in the source directory
+      forceCabalGen = true;
+      cabal = {
+        author = "Marc Jakobi";
+        build-type = "Simple";
+        # license = "GPL-2.0-or-later"; TODO?
+        # license-file = "LICENCE.md";
+        version = "1.0.0.0";
+        meta = {
+          maintainer = "marc@jakobi.dev";
+          homepage = "mrcjkb.dev";
+          synopsis = "My Hakyll site";
         };
-
-        pkgs = import nixpkgs {
-          inherit system;
-          overlays = [
-            haskellNix.overlay
-            overlay
+        language = "GHC2021";
+        default-extensions = [
+          "ApplicativeDo"
+          "BlockArguments"
+          "DataKinds"
+          "DefaultSignatures"
+          "DeriveAnyClass"
+          "DeriveGeneric"
+          "DerivingVia"
+          "ExplicitNamespaces"
+          "LambdaCase"
+          "NoImplicitPrelude"
+          "OverloadedLabels"
+          "OverloadedStrings"
+          "PackageImports"
+          "RecordWildCards"
+          "StrictData"
+          "TypeFamilies"
+          "ViewPatterns"
+        ];
+        ghc-options = [
+          "-Weverything"
+          "-Wno-unsafe"
+          "-Wno-missing-safe-haskell-mode"
+          "-Wno-missing-export-lists"
+          "-Wno-missing-import-lists"
+          "-Wno-missing-kind-signatures"
+          "-Wno-all-missed-specialisations"
+        ];
+      };
+      packages.${pname} = {
+        src = sourceFilter ./.;
+        executable = {
+          enable = true;
+          source-dirs = "app";
+          dependencies = [
+            "hakyll"
+            "pandoc"
           ];
         };
+      };
+      envs.dev = {
+        env.DIRENV_IN_ENVRC = "";
+        setup-pre =
+          ''
+            NIX_MONITOR=disable nix run .#gen-cabal
+            NIX_MONITOR=disable nix run .#tags
+          ''
+          + self.checks.${system}.git.shellHook;
+        buildInputs = self.checks.${system}.git.enabledPackages;
+      };
+      outputs = {
+        packages = with config; let
+          site-pkg = self.packages.${system}.default;
+        in {
+          website = pkgs.stdenv.mkDerivation {
+            name = "website";
+            buildInputs = [];
+            src =
+              pkgs.nix-gitignore.gitignoreSourcePure [
+                ./.gitignore
+                ".git"
+                ".github"
+              ]
+              self;
+            # LANG and LOCALE_ARCHIVE are fixes pulled from the community:
+            #   https://github.com/jaspervdj/hakyll/issues/614#issuecomment-411520691
+            #   https://github.com/NixOS/nix/issues/318#issuecomment-52986702
+            #   https://github.com/MaxDaten/brutal-recipes/blob/source/default.nix#L24
+            LANG = "en_US.UTF-8";
+            LOCALE_ARCHIVE =
+              pkgs.lib.optionalString
+              (pkgs.buildPlatform.libc == "glibc")
+              "${pkgs.glibcLocales}/lib/locale/locale-archive";
 
-        cv-pkg = cv.packages.${system}.default;
+            buildPhase = ''
+              runHook preBuild
+              mkdir files
+              cp ${cv-pkg}/* files/
+              ${lib.getExe site-pkg} build --verbose
+              runHook postBuild
+            '';
 
-        flake = pkgs.hsPkgs.flake {};
-
-        mrcjkbs-site = flake.packages."mrcjkbs-site:exe:site";
-
-        website = pkgs.stdenv.mkDerivation {
-          name = "website";
-          buildInputs = [];
-          src =
-            pkgs.nix-gitignore.gitignoreSourcePure [
-              ./.gitignore
-              ".git"
-              ".github"
-            ]
-            self;
-          # LANG and LOCALE_ARCHIVE are fixes pulled from the community:
-          #   https://github.com/jaspervdj/hakyll/issues/614#issuecomment-411520691
-          #   https://github.com/NixOS/nix/issues/318#issuecomment-52986702
-          #   https://github.com/MaxDaten/brutal-recipes/blob/source/default.nix#L24
-          LANG = "en_US.UTF-8";
-          LOCALE_ARCHIVE =
-            pkgs.lib.optionalString
-            (pkgs.buildPlatform.libc == "glibc")
-            "${pkgs.glibcLocales}/lib/locale/locale-archive";
-
-          buildPhase = ''
-            runHook preBuild
-            mkdir files
-            cp ${cv-pkg}/* files/
-            ${mrcjkbs-site}/bin/site build --verbose
-            runHook postBuild
-          '';
-
-          installPhase = ''
-            runHook preInstall
-            mkdir -p "$out/dist"
-            cp -a _site/. "$out/dist"
-            runHook postInstall
-          '';
+            installPhase = ''
+              runHook preInstall
+              mkdir -p "$out/dist"
+              cp -a _site/. "$out/dist"
+              runHook postInstall
+            '';
+          };
         };
-      in
-        flake
-        // {
-          packages = {
-            default = website;
-            inherit mrcjkbs-site website;
-          };
-          apps.default = flake-utils.lib.mkApp {
-            drv = mrcjkbs-site;
-            exePath = "/bin/site";
-          };
-          checks = {
-            pre-commit = pre-commit-hooks.lib.${system}.run {
-              src = self;
-              hooks = {
-                alejandra.enable = true;
-              };
+        checks = {
+          git = inputs.git-hooks.lib.${system}.run {
+            src = self;
+            hooks = {
+              alejandra.enable = true;
             };
           };
-        }
-    );
+        };
+      };
+    });
 }
