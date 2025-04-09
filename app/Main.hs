@@ -1,50 +1,51 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import           Hakyll
-import Text.Pandoc.Highlighting
-import Text.Pandoc.Options      (WriterOptions (..))
-import Prelude
+import           Prelude
+import           Text.Pandoc.Highlighting
+import           Text.Pandoc.Options      (WriterOptions (..))
 
 main :: IO ()
-main = hakyll $ do
-    match "images/*" $ do
+main = hakyll  do
+    match "images/*"  do
         route   idRoute
         compile copyFileCompiler
 
-    match "files/*" $ do
+    match "files/*"  do
         route   idRoute
         compile copyFileCompiler
 
-    match "css/*" $ do
+    match "css/*"  do
         route   idRoute
         compile compressCssCompiler
 
-    match "CNAME" $ do
+    match "CNAME"  do
         route   idRoute
         compile copyFileCompiler
 
-    match (fromList ["about.rst", "contact.markdown"]) $ do
+    match (fromList ["about.rst", "contact.markdown"])  do
         route   $ setExtension "html"
         compile $ pandocCompiler'
             >>= loadAndApplyTemplate "templates/default.html" defaultContext
             >>= relativizeUrls
 
-    match "cv.html" $ do
+    match "cv.html"  do
         route idRoute
         compile $ getResourceBody
             >>= loadAndApplyTemplate "templates/default.html" defaultContext
             >>= relativizeUrls
 
-    match "posts/*" $ do
+    match "posts/*"  do
         route $ setExtension "html"
         compile $ pandocCompiler'
             >>= loadAndApplyTemplate "templates/post.html"    postCtx
+            >>= saveSnapshot "content"
             >>= loadAndApplyTemplate "templates/default.html" postCtx
             >>= relativizeUrls
 
-    create ["archive.html"] $ do
+    create ["archive.html"]  do
         route idRoute
-        compile $ do
+        compile  do
             posts <- recentFirst =<< loadAll "posts/*"
             let archiveCtx =
                     listField "posts" postCtx (return posts) `mappend`
@@ -56,15 +57,23 @@ main = hakyll $ do
                 >>= loadAndApplyTemplate "templates/default.html" archiveCtx
                 >>= relativizeUrls
 
-    create ["css/syntax.css"] $ do
+    create ["css/syntax.css"] do
       route idRoute
-      compile $ do
+      compile  do
         makeItem $ styleToCss pandocCodeStyle
 
+    create ["atom.xml"] do
+      route idRoute
+      compile $ mkFeed renderAtom
 
-    match "index.html" $ do
+    create ["rss.xml"] do
+      route idRoute
+      compile $ mkFeed renderRss
+
+
+    match "index.html"  do
         route idRoute
-        compile $ do
+        compile  do
             posts <- recentFirst =<< loadAll "posts/*"
             let indexCtx =
                     listField "posts" postCtx (return posts) `mappend`
@@ -95,3 +104,19 @@ pandocCompiler' =
     defaultHakyllWriterOptions
       { writerHighlightStyle   = Just pandocCodeStyle
       }
+
+type FeedRenderer = FeedConfiguration -> Context String -> [Item String] -> Compiler (Item String)
+
+mkFeed :: FeedRenderer -> Compiler (Item String)
+mkFeed render = do
+    let feedCtx = postCtx `mappend` bodyField "description"
+        feedConfiguration = FeedConfiguration
+          { feedTitle       = "mrcjkb"
+          , feedDescription = "My Hakyll site"
+          , feedAuthorName  = "Marc Jakobi"
+          , feedAuthorEmail = "marc@jakobi.dev"
+          , feedRoot        = "mrcjkb.dev"
+          }
+    posts <- fmap (take 10) . recentFirst =<< loadAllSnapshots "posts/*" "content"
+    render feedConfiguration feedCtx posts
+

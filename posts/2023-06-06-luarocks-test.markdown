@@ -10,7 +10,6 @@ class: container
   <a href="https://github.com/nvim-neorocks/nvim-busted-action">
     <img src="https://avatars.githubusercontent.com/u/124081866?s=400&u=0da379a468d46456477a1f68048b020cf7a99f34&v=4" alt="nvim-busted-action">
   </a>
-  <h2>🌒</h>
 </div>
 <!-- markdownlint-restore -->
 
