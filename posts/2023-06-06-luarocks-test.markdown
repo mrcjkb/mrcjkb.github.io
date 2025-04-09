@@ -1,5 +1,5 @@
 ---
-title: Test your Neovim plugins with luarocks & busted
+title: Test your Neovim plugins with luarocks and busted
 tags: neovim, plugin, luarocks, lua, busted, test, plenary
 class: container
 ---
