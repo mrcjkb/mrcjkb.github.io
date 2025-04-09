@@ -1,12 +1,10 @@
---------------------------------------------------------------------------------
 {-# LANGUAGE OverloadedStrings #-}
-import           Data.Monoid (mappend)
+
 import           Hakyll
 import Text.Pandoc.Highlighting
-import Text.Pandoc.Options      (ReaderOptions (..), WriterOptions (..))
+import Text.Pandoc.Options      (WriterOptions (..))
+import Prelude
 
-
---------------------------------------------------------------------------------
 main :: IO ()
 main = hakyll $ do
     match "images/*" $ do
@@ -81,6 +79,7 @@ main = hakyll $ do
 
 
 --------------------------------------------------------------------------------
+
 postCtx :: Context String
 postCtx =
     dateField "date" "%B %e, %Y" `mappend`
