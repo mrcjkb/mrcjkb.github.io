@@ -33,8 +33,6 @@
       cv-pkg = inputs.cv.packages.${system}.default;
     in {
       compiler = "ghc96";
-      # generate a Cabal file from Nix config even if there is one in the source directory
-      forceCabalGen = true;
       cabal = {
         author = "Marc Jakobi";
         build-type = "Simple";
