@@ -139,6 +139,6 @@ The Lux Team
 
 ## License
 
-- Lux is licensed under [MIT](https://github.com/nvim-neorocks/lux/blob/master/LICENSE).
+- Lux is licensed under [LGPLv3.0+](https://github.com/nvim-neorocks/lux/blob/master/LICENSE).
 - The Lux logo © 2025 by Kai Jakobi is licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
 
