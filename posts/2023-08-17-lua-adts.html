@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>mrcjkb.dev - Algebraic data types in Lua (Almost)</title>
+        <link rel="stylesheet" href="../css/default.css" />
+        <link rel="stylesheet" href="../css/syntax.css" />
+    </head>
+    <body>
+        <header>
+            <div class="container">
+              <div class="logo">
+                  <a href="../">mrcjkb.dev</a>
+              </div>
+              <nav>
+                  <a href="../">Home</a>
+                  <a href="../about.html">About</a>
+                  <a href="../contact.html">Contact</a>
+                  <a href="../cv.html">CV</a>
+                  <a href="../archive.html">Archive</a>
+                  <a href="../rss.xml">RSS feed</a>
+                  <a href="../atom.xml">Atom feed</a>
+              </nav>
+            </div>
+        </header>
+
+        <main role="main">
+            <div class="container">
+              <h1>Algebraic data types in Lua (Almost)</h1>
+              <article>
+    <section class="header">
+        Posted on August 17, 2023
+        
+    </section>
+    <section>
+        <p>Lua, in the realm of Neovim, is a curious companion.
+For personal configuration tweaks, it’s incredibly responsive, giving me immediate feedback.
+Moreover, when I’m uncertain about an idea’s potential,
+Lua offers a forgiving platform for prototyping without commitment.</p>
+<p>Yet, as the maintainer of a few plugins, who otherwise works with Haskell professionally,
+I have mixed feelings. Its dynamic typing casts shadows of unpredictability,
+making Neovim plugins susceptible to unexpected bugs at the wrong time.</p>
+<p><img src="https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/889a75bd-d63d-490f-bcf6-2e6e3b9d9b05" width="300" /></p>
+<p>When it comes to Neovim plugin (and Lua) development, the right tools can be game-changers.
+I’m aware of typed languages that compile to Lua, but here’s a native approach.
+Here, I’ll delve into my experiences in leveraging <a href="https://github.com/LuaLS/lua-language-server"><code>lua-language-server</code></a>
+and its support for <a href="https://github.com/LuaLS/lua-language-server/wiki/Annotations">type annotations</a>,
+demonstrating how they can elevate the robustness and expressiveness of your Lua code.</p>
+<p>As an example, we will be attempting to define an algebraic data type (ADT),
+and using <code>lua-language-server</code> for static type checking.</p>
+<h2 id="what-are-algebraic-data-types-adts">What are algebraic data types (ADT)s?</h2>
+<p>For those steeped in the world of functional languages like Haskell, F#, or OCaml,
+the term ADT might sound familiar. If that’s you, feel free to skip ahead.</p>
+<p>But if ADTs sound Greek to you, a straightforward analogy would be <a href="https://doc.rust-lang.org/rust-by-example/custom_types/enum.html">Rust Enums</a>,
+which are, in fact, ADTs. They’re powerful constructs allowing versatile and type-safe data modeling.</p>
+<p>I want to keep this post short, so I will assume this is enough information
+for you to know all the niceties that come with ADTs.</p>
+<p>For a deeper dive, there’s a vast sea of resources available for you to explore.</p>
+<h2 id="lua-type-annotations---the-basics">Lua type annotations - the basics</h2>
+<p>As mentioned previously, <code>lua-language-server</code> is capable of
+producing diagnostics based on <a href="https://github.com/LuaLS/lua-language-server/wiki/Annotations">type annotations</a>.</p>
+<p>Here’s a basic example of defining a data type with a <code>table</code>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@class</span><span class="co"> Foo</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@field</span><span class="co"> bar string</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@type</span><span class="co"> Foo</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="va">x</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="va">bar</span> <span class="op">=</span> <span class="st">&quot;hello&quot;</span><span class="op">,</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>And now the magic:
+Witness how <code>lua-language-server</code> utilizes these annotations to pinpoint type errors within Neovim:</p>
+<figure>
+<img src="https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/69c884d9-812b-414e-9b95-a83527fcd757" width="550" alt="lua-ls-example" />
+<figcaption aria-hidden="true">lua-ls-example</figcaption>
+</figure>
+<h2 id="dynamic-type-annotations">Dynamic type annotations</h2>
+<p>In Lua, we’re not restricted to a single type.
+With annotations and runtime checks, we can express flexibility in our type expectations.
+For instance, consider a function that can accept either an instance of <code>Foo</code> or a <code>string</code>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@param</span><span class="co"> </span><span class="cv">foo</span><span class="co"> Foo|string</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">local</span> <span class="kw">function</span> print_foo<span class="op">(</span><span class="va">foo</span><span class="op">)</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="fu">type</span><span class="op">(</span><span class="va">foo</span><span class="op">)</span> <span class="op">==</span> <span class="st">'string'</span> <span class="cf">then</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">print</span><span class="op">(</span><span class="va">foo</span><span class="op">)</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">else</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">print</span><span class="op">(</span><span class="va">foo</span><span class="op">.</span><span class="va">bar</span><span class="op">)</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">end</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
+<h2 id="towards-adts">Towards ADTs</h2>
+<p>Type annotations also permit the creation of aliases,
+streamlining the way we reference combined types. For instance:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@alias</span><span class="co"> FooOrString Foo|string</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@param</span><span class="co"> </span><span class="cv">foo</span><span class="co"> FooOrString</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">local</span> <span class="kw">function</span> print_foo<span class="op">(</span><span class="va">foo</span><span class="op">)</span></span></code></pre></div>
+<p>For those accustomed to Haskell, this syntax might ring a bell.
+Diving a bit deeper, let’s consider a more intricate use-case that I’ve
+<a href="https://github.com/mrcjkb/neotest-haskell/blob/c01757f54365208a63f54cea989206060f02b746/lua/neotest-haskell/treesitter.lua#L11">employed in my <code>neotest-haskell</code> plugin</a>.
+Here, I’ve depicted a type that might refer to an unopened file or, alternatively, its contents:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">---Reference to a file</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@class</span><span class="co"> FileRef</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@field</span><span class="co"> file string</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co">---Reference to a file's content</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@class</span><span class="co"> FileContentRef</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@field</span><span class="co"> content string</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@alias</span><span class="co"> TestFile FileRef | FileContentRef</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="co">---Read a FileRef.</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@param</span><span class="co"> </span><span class="cv">file_ref</span><span class="co"> FileRef</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@return</span><span class="co"> FileContentRef content_ref</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="kw">local</span> <span class="kw">function</span> to_file_content_ref<span class="op">(</span><span class="va">file_ref</span><span class="op">)</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="op">{</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    <span class="va">content</span> <span class="op">=</span> <span class="va">lib</span><span class="op">.</span><span class="va">files</span><span class="op">.</span>read<span class="op">(</span><span class="va">file_ref</span><span class="op">.</span><span class="va">file</span><span class="op">),</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@param</span><span class="co"> </span><span class="cv">query</span><span class="co"> string|table The tree-sitter query.</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@param</span><span class="co"> </span><span class="cv">ref</span><span class="co"> TestFile The test file.</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@return</span><span class="co"> ...</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="va">treesitter</span><span class="op">.</span>iter_ts_matches<span class="op">(</span><span class="va">query</span><span class="op">,</span> <span class="va">ref</span><span class="op">)</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>  <span class="kw">local</span> <span class="va">source</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="va">ref</span><span class="op">.</span><span class="va">file</span> <span class="cf">then</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>    <span class="co">---</span><span class="an">@cast</span><span class="co"> ref FileRef</span></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>    <span class="va">source</span> <span class="op">=</span> to_file_content_ref<span class="op">(</span><span class="va">ref</span><span class="op">)</span></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>  <span class="cf">else</span></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>    <span class="co">---</span><span class="an">@cast</span><span class="co"> ref FileContentRef</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>    <span class="va">source</span> <span class="op">=</span> <span class="va">ref</span></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>  <span class="cf">end</span></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- &lt;omitted for brevity&gt; ...</span></span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
+<p>With these annotations, we inch Lua ever closer to the potent expressiveness of ADTs.
+This achieves a harmonious blend of type versatility and precision.</p>
+<p>Yet, it’s essential to acknowledge certain distinctions compared to real ADTs:</p>
+<ul>
+<li><code>FileRef</code> and <code>FileContentRef</code> are independent type definitions, rather than data constructors.</li>
+<li><code>TestFile</code> is an alias, not a concrete type.</li>
+<li>Lua doesn’t natively facilitate pattern matching.</li>
+</ul>
+<p>This boils down to the fact that Haskell and Rust’s type systems are <a href="https://en.wikipedia.org/wiki/Nominal_type_system">nominal</a>,
+while Lua’s is <a href="https://en.wikipedia.org/wiki/Structural_type_system">structural</a><a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>.</p>
+<p>Nevertheless, it’s feasible to simulate basic pattern matching with a function like this one:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@generic</span><span class="co"> T</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@param</span><span class="co"> </span><span class="cv">ref</span><span class="co"> TestFile</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@param</span><span class="co"> </span><span class="cv">onFileRef</span><span class="co"> fun(ref:FileRef):T</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@param</span><span class="co"> </span><span class="cv">onContentRef</span><span class="co"> fun(ref:FileContentRef):T</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@return</span><span class="co"> T</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="kw">local</span> <span class="kw">function</span> matchTestFile<span class="op">(</span><span class="va">ref</span><span class="op">,</span> <span class="va">onFileRef</span><span class="op">,</span> <span class="va">onContentRef</span><span class="op">)</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="va">ref</span><span class="op">.</span><span class="va">content</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">---</span><span class="an">@cast</span><span class="co"> ref FileContentRef</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">and</span> onContentRef<span class="op">(</span><span class="va">ref</span><span class="op">)</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="co">---</span><span class="an">@cast</span><span class="co"> ref FileRef</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">or</span> onFileRef<span class="op">(</span><span class="va">ref</span><span class="op">)</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
+<p>There’s an important caveat to note:
+While both the type annotation capabilities of <code>lua-language-server</code> and Neovim’s type annotations
+are continually evolving and improving, they’re not flawless.
+As of writing this post, the following misalignment can still occur:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@type</span><span class="co"> FileRef</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="va">x</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="va">file</span> <span class="op">=</span> <span class="st">&quot;/path/to/file&quot;</span><span class="op">,</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="va">content</span> <span class="op">=</span> <span class="dv">5</span><span class="op">,</span> <span class="co">-- Type-checks and breaks `matchTestFile` at runtime</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>There is a <a href="https://github.com/LuaLS/lua-language-server/issues/1990">feature request</a>,
+with an active discussion, so I’m optimistic about a resolution in the near future.</p>
+<p>[Update]: Support for <code>---@class (exact)</code> annotations <a href="https://github.com/LuaLS/lua-language-server/commit/c2018e05de0e9eebadbe094357d22883a608fdf5">has been added</a>.</p>
+<p>I’d also love to see the ability to report diagnostics if variables or functions are not annotated.</p>
+<p>In the meantime, it pays to tread with caution.</p>
+<h2 id="statically-type-checking-your-plugins">Statically type checking your plugins</h2>
+<p>Diagnostics in your editor are great, but they’re not much of a defense if contributors
+or yourself can open PRs that disregard your type constraints.
+The silver lining? <code>lua-language-server</code> comes with a command-line interface.</p>
+<pre class="console"><code>&gt; lua-language-server --checklevel=Warning --logpath=/tmp --configpath=.luarc.json --check ./lua
+Diagnosis complete, 1 problems found, see /tmp/check.json</code></pre>
+<p>Here’s what’s happening:</p>
+<ul>
+<li>The <code>--configpath</code> option points to a configuration file,
+which can specify paths to dependencies, such as plugins and Neovim’s runtime path,
+among other things.</li>
+<li><code>--check</code> specifies a file or a project directory.</li>
+<li>If there are any diagnostics (according to the <code>--checklevel</code>),
+<code>lua-language-server</code> will log a diagnostics report, check.json, inside the directory provided to
+<code>--logpath</code>.</li>
+</ul>
+<p>To make this actionable in your workflow,
+I’ve crafted two utilities that integrate with GitHub Actions for static type-checking:</p>
+<h3 id="for-nix-enthusiasts">For Nix enthusiasts</h3>
+<p>For those in the Nix ecosystem, I’ve introduced a <code>lua-ls</code> hook
+to the <a href="https://github.com/cachix/pre-commit-hooks.nix"><code>pre-commit-hooks-nix</code></a> framework.
+This serves dual purposes: as a git pre-commit hook and for Nix checks.
+I personally prefer this for my projects, though some optimization on the <code>lua-ls</code> pre-commit hook is on my to-do list.
+If you’re developing Neovim plugins, consider <a href="https://github.com/mrcjkb/nvim-lua-nix-plugin-template">my template repository</a>.</p>
+<p>Why I prefer this approach:
+Any GitHub Actions can easily be reproduced locally, assuming you’ve
+<a href="https://nixos.org/download#download-nix">set up Nix</a> and have <a href="https://nixos.wiki/wiki/Flakes">flakes enabled</a>.</p>
+<h3 id="for-the-broader-audience">For the broader audience</h3>
+<p>For those not on the Nix train, I’ve got you covered with a <a href="https://github.com/marketplace/actions/lua-typecheck-action">simple GitHub action, named <code>lua-typecheck-action</code></a>.
+The setup is straightforward (albeit more limited), driven by a <a href="https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions">GitHub workflow YAML</a> (<a href="https://noyaml.com/">eww</a>).</p>
+<p><a href="https://noyaml.com/"><img src="https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/804f8300-4589-41d9-8461-5e5c076d5eb3" width="450" /></a></p>
+<p>I must mention that my focus has shifted away from this action, so major updates might be sparse.
+While there’s no direct support for dependencies, <a href="https://github.com/mrcjkb/lua-typecheck-action/issues/3#issuecomment-1418273692">a workaround exists</a>.</p>
+<p>P.S. A plugin that I recommend adding as a dependency for <code>lua-ls</code> type-checking
+(as well as in your editor) is <a href="https://github.com/folke/neodev.nvim"><code>neodev.nvim</code></a>.
+It is regularly updated with Neovim API type annotations for Neovim stable and nightly.</p>
+<h2 id="wrapping-up">Wrapping up</h2>
+<p>Embracing tools like <code>lua-language-server</code> can significantly enhance our experience with Lua,
+while still allowing for rapid prototyping and ease of configuration.
+Although Lua might not naturally possess the rich type systems of languages like Haskell and Rust,
+with the right techniques, we can attempt to approximate their rigor and reliability.
+Here’s to safer, more expressive Lua coding in the future!</p>
+<h2 id="dive-deeper">Dive Deeper</h2>
+<p>Inspired by this exploration into ADTs in Lua? I’d love to see how you apply these concepts:</p>
+<ul>
+<li>Try it out: Use these techniques in your own Neovim plugins.</li>
+<li>Share: Found a new approach or insight? Spread the word.</li>
+<li>Connect: Have feedback or questions? Feel free <a href="https://github.com/mrcjkb/nvim-lua-nix-plugin-template/issues">to open an issue on GitHub</a>.</li>
+</ul>
+<h2 id="credits">Credits</h2>
+<ul>
+<li>Thanks to <a href="https://owen.cafe/">Owen</a> for input and proof-reading.</li>
+</ul>
+<section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p>It appears that Lua’s union annotations are <a href="https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions">inspired by TypeScript</a>.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+    </section>
+</article>
+
+            </div>
+        </main>
+
+        <footer>
+            <div class="container">
+              Site proudly generated by
+              <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+            </div>
+        </footer>
+    </body>
+</html>
