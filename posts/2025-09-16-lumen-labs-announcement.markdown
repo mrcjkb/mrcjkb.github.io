@@ -89,8 +89,8 @@ Some notable new features since the previous announcement:
   for use by the type checker and a language server.
 - A `busted-nlua` test backend for easily running [`busted`](https://github.com/lunarmodules/busted)
   tests with Neovim as the Lua interpreter.
-- For packages that haven't been released to luarocks yet, the `lux.toml` format now supports
-  you to specify Git dependencies.
+- For packages that haven't been released to luarocks yet, the `lux.toml` format now lets
+  you specify Git dependencies.
 - A templating system that lets you configure how Lux injects source and
   version information into generated rockspecs.
 - We now publish pre-built binary artifacts for:
