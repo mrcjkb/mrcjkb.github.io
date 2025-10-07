@@ -4,87 +4,98 @@ import           Hakyll
 import           Prelude
 import           Text.Pandoc.Highlighting
 import           Text.Pandoc.Options      (WriterOptions (..))
+import Hakyll.Contrib.LaTeX
 
 main :: IO ()
-main = hakyll  do
-    match "images/*"  do
-        route   idRoute
-        compile copyFileCompiler
+main = do
+    -- renderFormulae <- initFormulaCompilerDataURI 1000 defaultEnv
+    hakyll  do
+        match "images/*"  do
+            route   idRoute
+            compile copyFileCompiler
 
-    match "files/*"  do
-        route   idRoute
-        compile copyFileCompiler
+        match "files/*"  do
+            route   idRoute
+            compile copyFileCompiler
 
-    match "css/*"  do
-        route   idRoute
-        compile compressCssCompiler
+        match "css/*"  do
+            route   idRoute
+            compile compressCssCompiler
 
-    match "CNAME"  do
-        route   idRoute
-        compile copyFileCompiler
+        match "CNAME"  do
+            route   idRoute
+            compile copyFileCompiler
 
-    match (fromList ["about.rst", "contact.markdown"])  do
-        route   $ setExtension "html"
-        compile $ pandocCompiler'
-            >>= loadAndApplyTemplate "templates/default.html" defaultContext
-            >>= relativizeUrls
+        -- FIXME: latex-formulae-image is marked as broken and jailbreak doesn't fix it.
+        -- Needs upstream dependency version bounds update
+        --
+        -- match "posts/*.markdown" $ do
+        --    route $ setExtension "html"
+        --    compile $ pandocCompilerWithTransformM defaultHakyllReaderOptions defaultHakyllWriterOptions
+        --            $ renderFormulae defaultPandocFormulaOptions
 
-    match "cv.html"  do
-        route idRoute
-        compile $ getResourceBody
-            >>= loadAndApplyTemplate "templates/default.html" defaultContext
-            >>= relativizeUrls
-
-    match "posts/*"  do
-        route $ setExtension "html"
-        compile $ pandocCompiler'
-            >>= loadAndApplyTemplate "templates/post.html"    postCtx
-            >>= saveSnapshot "content"
-            >>= loadAndApplyTemplate "templates/default.html" postCtx
-            >>= relativizeUrls
-
-    create ["archive.html"]  do
-        route idRoute
-        compile  do
-            posts <- recentFirst =<< loadAll "posts/*"
-            let archiveCtx =
-                    listField "posts" postCtx (return posts) `mappend`
-                    constField "title" "Archives"            `mappend`
-                    defaultContext
-
-            makeItem ""
-                >>= loadAndApplyTemplate "templates/archive.html" archiveCtx
-                >>= loadAndApplyTemplate "templates/default.html" archiveCtx
+        match (fromList ["about.rst", "contact.markdown"])  do
+            route   $ setExtension "html"
+            compile $ pandocCompiler'
+                >>= loadAndApplyTemplate "templates/default.html" defaultContext
                 >>= relativizeUrls
 
-    create ["css/syntax.css"] do
-      route idRoute
-      compile  do
-        makeItem $ styleToCss pandocCodeStyle
-
-    create ["atom.xml"] do
-      route idRoute
-      compile $ mkFeed renderAtom
-
-    create ["rss.xml"] do
-      route idRoute
-      compile $ mkFeed renderRss
-
-
-    match "index.html"  do
-        route idRoute
-        compile  do
-            posts <- recentFirst =<< loadAll "posts/*"
-            let indexCtx =
-                    listField "posts" postCtx (return posts) `mappend`
-                    defaultContext
-
-            getResourceBody
-                >>= applyAsTemplate indexCtx
-                >>= loadAndApplyTemplate "templates/default.html" indexCtx
+        match "cv.html"  do
+            route idRoute
+            compile $ getResourceBody
+                >>= loadAndApplyTemplate "templates/default.html" defaultContext
                 >>= relativizeUrls
 
-    match "templates/*" $ compile templateBodyCompiler
+        match "posts/*"  do
+            route $ setExtension "html"
+            compile $ pandocCompiler'
+                >>= loadAndApplyTemplate "templates/post.html"    postCtx
+                >>= saveSnapshot "content"
+                >>= loadAndApplyTemplate "templates/default.html" postCtx
+                >>= relativizeUrls
+
+        create ["archive.html"]  do
+            route idRoute
+            compile  do
+                posts <- recentFirst =<< loadAll "posts/*"
+                let archiveCtx =
+                        listField "posts" postCtx (return posts) `mappend`
+                        constField "title" "Archives"            `mappend`
+                        defaultContext
+
+                makeItem ""
+                    >>= loadAndApplyTemplate "templates/archive.html" archiveCtx
+                    >>= loadAndApplyTemplate "templates/default.html" archiveCtx
+                    >>= relativizeUrls
+
+        create ["css/syntax.css"] do
+          route idRoute
+          compile  do
+            makeItem $ styleToCss pandocCodeStyle
+
+        create ["atom.xml"] do
+          route idRoute
+          compile $ mkFeed renderAtom
+
+        create ["rss.xml"] do
+          route idRoute
+          compile $ mkFeed renderRss
+
+
+        match "index.html"  do
+            route idRoute
+            compile  do
+                posts <- recentFirst =<< loadAll "posts/*"
+                let indexCtx =
+                        listField "posts" postCtx (return posts) `mappend`
+                        defaultContext
+
+                getResourceBody
+                    >>= applyAsTemplate indexCtx
+                    >>= loadAndApplyTemplate "templates/default.html" indexCtx
+                    >>= relativizeUrls
+
+        match "templates/*" $ compile templateBodyCompiler
 
 
 --------------------------------------------------------------------------------

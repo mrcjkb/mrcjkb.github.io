@@ -33,6 +33,10 @@
       cv-pkg = inputs.cv.packages.${system}.default;
     in {
       compiler = "ghc96";
+      overrides = {notest, unbreak, jailbreak, ...}: {
+        # latex-formulae-hakyll = unbreak (notest jailbreak);
+        # latex-formulae-image = jailbreak unbreak;
+      };
       cabal = {
         author = "Marc Jakobi";
         build-type = "Simple";
@@ -81,6 +85,7 @@
           source-dirs = "app";
           dependencies = [
             "hakyll"
+            # "latex-formulae-hakyll"
             "pandoc"
           ];
         };
