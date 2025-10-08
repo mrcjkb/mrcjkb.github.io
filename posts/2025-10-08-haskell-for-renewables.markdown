@@ -180,7 +180,7 @@ charge power time battery = -- Implementation omitted for brevity
 ```
 
 - The first and second arguments are the power we supply to the battery
-  and the amount of time we apply it for.
+  and the amount of time we supply it for.
 
 - The third argument, `ACBattery`, is the battery’s current state.
   Haskell is stateless by design, so the (immutable) state is passed in,
