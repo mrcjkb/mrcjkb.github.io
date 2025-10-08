@@ -125,18 +125,52 @@ While callers can no longer pass in completely wrong types, two major issues rem
 A third issue is that object-oriented languages are designed to be stateful,
 which causes difficulty with concurrency and makes testing very challenging.
 
-The type system of a traditional OOP language is not expressive enough
+This approach is not expressive enough
 to prevent someone from passing in a value with the wrong unit,
 or from misusing the arguments in the implementation.
 As a result, unit tests must be written just to compensate for this lack of type safety.
 
-Technically, it’s possible to define types for each argument.
-But in a language like Java, this often means runtime conversions and checks,
-which can introduce significant performance costs.
-Furthermore, basic arithmetic operations (`+`, `-`, `*`, ...) would have to be
-reimplemented for each combination of quantities.
+Technically, it’s possible to define types for each argument:
+For example, consider using the [`unit-api`](https://unitsofmeasurement.github.io/unit-api/)
+library to encode units:
+
+```java
+public class ACBattery {
+  Quantity<Energy> energy;
+
+  // Constructor omitted for brevity
+
+  /**
+   * @param power Charging power
+   * @param duration Charging duration
+   */
+  public void charge(Quantity<Power> power,
+                     Quantity<Time> duration) {
+    Quantity<Energy> energyAdded =
+      power.multiply(duration).asType(Energy.class);
+    this.energy = this.energy.add(energyAdded);
+  }
+}
+```
+
+This approach is more robust:
+
+  - You cannot accidentally pass a length or temperature where a power or time is expected.
+  - The compiler will prevent you from trying to compose incompatible units.
+
+But in a language like Java, this comes at a cost:
+
+- It means object allocation, runtime conversions and dynamic dispatch,
+  which can introduce significant performance costs.
+- Instead of using basic arithmetic operators (`+`, `-`, `*`, ...),
+  you now have to use redefined functions (`add`, `multiply`, etc.).
+
 Not to mention a significant increase in verbosity / boilerplate you must maintain.
 That harms the one thing business cares about: _developer productivity_.
+
+In my experience working across multiple Java codebases,
+all of them ultimately relied on primitives for physical quantities,
+sacrificing safety for simplicity and speed.
 
 ## Type-Driven Development: The Haskell advantage
 
@@ -196,18 +230,28 @@ enters your core logic.
 Once data are parsed into these types, you don’t need to check them at runtime,
 they’re guaranteed by the compiler.
 
-
 Let's simplify the function even further, focusing on just energy transformation:
 
 ```haskell
 charge :: Power Double -> Time Double -> Energy Double -> Energy Double
-charge power time energy = -- Implementation omitted for brevity
+charge power time energy =
+    energy + power * time
 ```
 
 Instead of a battery state, this version takes the battery's energy before charging
 and evaluates to the energy after charging.
 
-When calling the function, the user simply specifies the units:
+Unlike in Java, where using units libraries requires verbose method calls like `add` and `multiply`,
+we can use our familiar arithmetic operators directly.
+Another advantage is that because `dimensional` uses Haskell's [`newtype` declarations](https://wiki.haskell.org/index.php?title=Newtype),
+each quantity is represented internally as its underlying numeric type.
+This means that, at runtime, we can expect negligible overhead compared to
+plain numeric operations[^4] - unlike Java's units libraries,
+which rely on object allocation and dynamic dispatch.
+
+[^4]: Disclaimer: `dimensional` does not yet provide any benchmarks at the time of writing.
+
+When calling the `charge` function, you specify the units directly:
 
 ```haskell
 example = charge chargingPower duration currentEnergy
@@ -229,16 +273,16 @@ lets the compiler guide you toward correct implementations.
 Unit safety, domain modeling, and strong typing aren't just academic.
 They’re practical tools for building reliable, maintainable software in renewable energy and beyond.
 
-All this time I had no idea: My thermodynamics professor had taught me me that Haskell is
+All this time I had no idea: My thermodynamics professor had taught me that Haskell is
 the perfect fit for renewable energy tech!
 
-## Test-Driven development: Focus on what matters!
+## Test-Driven Development: Focus on what matters!
 
 I'm a strong advocate for [test-driven development (fake it till you make it)](https://wiki.c2.com/?FakeItUntilYouMakeIt).
 In my experience, it’s the best way to ensure high-quality, meaningful test coverage.
 One major reason people avoid TDD is that it can seem tedious,
 especially in traditional OOP, where unit tests often compensate for weak type safety.
-With Haskell we can write tests that catch far more bugs with far less code,
+With Haskell, we can write tests that catch far more bugs with far less code,
 by focusing on what matters: properties and behaviour.
 
 Powerful libraries like [`QuickCheck`](https://hackage.haskell.org/package/QuickCheck),
