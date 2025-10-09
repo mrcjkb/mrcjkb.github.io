@@ -136,6 +136,7 @@ library to encode units:
 
 ```java
 public class ACBattery {
+  ACBatterySpec spec;
   Quantity<Energy> energy;
 
   // Constructor omitted for brevity
