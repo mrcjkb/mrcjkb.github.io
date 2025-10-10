@@ -318,3 +318,9 @@ physical laws of your domain, rather than just checking a handful of examples.
 ## Credits
 
 Thanks to Alex Drake (who I hack on Haskell clean tech with in our free time) for proof-reading.
+
+## Discuss
+
+- [HackerNews](https://news.ycombinator.com/item?id=45514024)
+- [Haskell discourse](https://discourse.haskell.org/t/why-haskell-is-the-perfect-fit-for-renewable-energy-tech/)
+- [Reddit](https://www.reddit.com/r/haskell/s/Wy8E2s7UB4)
