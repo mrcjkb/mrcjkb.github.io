@@ -116,7 +116,7 @@
             LANG = "en_US.UTF-8";
             LOCALE_ARCHIVE =
               pkgs.lib.optionalString
-              (pkgs.buildPlatform.libc == "glibc")
+              (pkgs.stdenv.buildPlatform.libc == "glibc")
               "${pkgs.glibcLocales}/lib/locale/locale-archive";
 
             buildPhase = ''
