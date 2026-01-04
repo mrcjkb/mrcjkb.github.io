@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>mrcjkb.dev - Lumen Labs - Luanox and Lux updates</title>
+        <link rel="stylesheet" href="../css/default.css" />
+        <link rel="stylesheet" href="../css/syntax.css" />
+    </head>
+    <body>
+        <header>
+            <div class="container">
+              <div class="logo">
+                  <a href="../">mrcjkb.dev</a>
+              </div>
+              <nav>
+                  <a href="../">Home</a>
+                  <a href="../about.html">About</a>
+                  <a href="../contact.html">Contact</a>
+                  <a href="../cv.html">CV</a>
+                  <a href="../archive.html">Archive</a>
+                  <a href="../rss.xml">RSS feed</a>
+                  <a href="../atom.xml">Atom feed</a>
+              </nav>
+            </div>
+        </header>
+
+        <main role="main">
+            <div class="container">
+              <h1>Lumen Labs - Luanox and Lux updates</h1>
+              <article>
+    <section class="header">
+        Posted on September 16, 2025
+        
+    </section>
+    <section>
+        <p><img src="https://github.com/lumen-oss/lux/raw/master/lux-logo.svg" width="300" />
+<img src="https://beta.luanox.org/images/logo.svg" width="300" /></p>
+<p>A few months ago, I posted <a href="https://mrcjkb.dev/posts/2025-04-07-lux-announcement.html">an introduction to Lux</a>,
+a modern package manager for Lua that treats Neovim and Nix as first-class citizens
+and is compatible with the <a href="https://luarocks.org">LuaRocks</a> ecosystem.</p>
+<p>We have a few updates to share.</p>
+<h2 id="lumen-labs">Lumen Labs</h2>
+<p>Up until recently, <a href="https://github.com/lumen-oss">we</a> had been working under a temporary GitHub org:
+nvim-neorocks.</p>
+<p>We have now formalized as a proper open-source organization.
+You can find us under the name “Lumen Labs” (definitely not an evil corporation).
+If you resonate with our mission, we’ve also set up an <a href="https://opencollective.com/lumen-labs">OpenCollective</a>.</p>
+<p>We aim to up our transparency with more blog posts,
+a higher rater of public announcements and status updates, and more.</p>
+<h2 id="luanox">Luanox</h2>
+<p>A frequent question we received when we announced Lux was:
+“Why is it not written in Lua?”<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<p>Well, <a href="https://github.com/NTBBloodbath/">NTBBloodbath</a> and <a href="https://github.com/vhyrro">Vhyrro</a>
+have been writing lots of Elixir to build <a href="beta.luanox.org">Luanox</a>,
+a work-in-progress modern hosting site for Lua packages,
+in the spirit of crates.io or PyPI.</p>
+<p>Waiting on luarocks.org to return a massive manifest file,
+just so we can check if a single package exists,
+is taking up about 50 % of Lux’s runtime for basic package management operations.
+For this reason, we wanted to create something snappy, secure and new,
+while still retaining compatibility:</p>
+<ul>
+<li>Licensed under AGPL-3.0.</li>
+<li>No storage of persistent information that could be leaked
+(no passwords; stateless JWT tokens).</li>
+<li>A custom service that runs in a separate container
+and verifies that rockspecs do not do anything malicious.</li>
+<li>Immutable packages<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>.</li>
+<li>Uses <a href="https://www.openapis.org/">OpenAPI</a>.</li>
+<li>On the roadmap:
+2FA for package uploads and facilities for recovering from an account takeover.</li>
+</ul>
+<p>The site itself doesn’t store any persistent information that could be leaked.</p>
+<p>We’re currently hosting a beta version of the site over at <a href="https://beta.luanox.org">https://beta.luanox.org</a>.
+On the Lux side, we’re also working on integrating the site so people
+can start uploading test packages there!
+Once we’re confident in the site’s performance,
+we’ll move all the data over to the final product.</p>
+<p>In the meantime, feel free to try making an account.
+Beta users will get a special badge in the final release :D</p>
+<p><img src="../images/luanox.png" style="float: center; margin: 10px; max-width: 900px" /></p>
+<h2 id="lux-updates">Lux updates</h2>
+<p>With the help of users, who have been rigorously testing and contributing to <a href="https://github.com/lumen-oss/lux">Lux</a>,
+we’ve squashed many bugs and significantly upped compatibility with luarocks packages.</p>
+<p>Some notable new features since the previous announcement:</p>
+<ul>
+<li>Lux is now licensed under LGPL-3.0-or-later.</li>
+<li>Static type checking based on <a href="https://luals.github.io/wiki/annotations/">LuaCATS annotations</a>,
+powered by <a href="https://github.com/EmmyLuaLs/emmylua-analyzer-rust"><code>emmylua-analyzer-rust</code></a>.
+With knowledge of your project’s dependencies, <code>lux-cli</code> can generate a <code>.luarc.json</code>
+for use by the type checker and a language server.</li>
+<li>A <code>busted-nlua</code> test backend for easily running <a href="https://github.com/lunarmodules/busted"><code>busted</code></a>
+tests with Neovim as the Lua interpreter.</li>
+<li>For packages that haven’t been released to luarocks yet, the <code>lux.toml</code> format now lets
+you specify Git dependencies.</li>
+<li>A templating system that lets you configure how Lux injects source and
+version information into generated rockspecs.</li>
+<li>We now publish pre-built binary artifacts for:
+<ul>
+<li>Arch Linux (via the <a href="https://aur.archlinux.org/packages/lux-cli-bin">AUR</a>)</li>
+<li>Debian</li>
+<li>AppImage (Linux)</li>
+<li>macOS (arm64)</li>
+<li>Windows (x64, MSVC)</li>
+</ul>
+All binary packages come bundled with the <code>lux-lua</code>
+bindings API for all supported Lua versions.</li>
+</ul>
+<h2 id="our-next-steps">Our next steps</h2>
+<h3 id="ecosystem-support-in-luanox">Ecosystem support in Luanox</h3>
+<p>Our project was born out of efforts to start pushing luarocks adoption in the Neovim ecosystem.
+One complaint we’ve heard about this from the community is that uploading Neovim-only packages
+to a generic Lua registry feels weird.
+For this reason, we will be adding special concepts that will make publishing Neovim plugins
+to a central Lua registry feel less “hacky” and more deliberate.
+We’ll be revamping luarocks’s old concept of manifests and turning them into an easy way
+to distinguish Lua packages specifically built for a given platform (Neovim, Nginx, etc.),
+with dedicated search pages just for those manifests!
+We are also working on a dedicated compatibility layer to make the luarocks CLI also work with Luanox :)</p>
+<h3 id="lux-and-lux.nvim">Lux and lux.nvim</h3>
+<p>On the Lux side, we will update Lux to use Luanox as its main server,
+falling back to luarocks.org for now.
+Due to a LuaJIT bug, our <a href="https://github.com/lumen-oss/rocks.nvim/pull/644">lux.nvim rewrite of rocks.nvim</a>
+is unfortunately on hold while we wait for <a href="https://github.com/luarocks/luarocks-site/pull/229">luarocks.org to support serving zipped JSON manfiests</a>.
+But we will pick it up again as soon as possible!</p>
+<h2 id="thank-you">Thank you</h2>
+<p>We’d like to express our heartfelt gratitude for all the tremendous support we have received
+in making Lua better for everyone.
+Thanks to the OpenCollective donations we’ve now been able to purchase a dedicated domain.
+And without all of the bug reports and external contributions,
+Lux wouldn’t even be close to where it is now!</p>
+<section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p>To address this: Lua is fantastic as a scripting language.
+But the compile time guarantees provided by Rust’s expressive type system
+make it a far better choice for a project of Lux’s scope.
+The Rust ecosystem, thanks to Cargo, offers powerful tooling
+that makes it ideal for writing a package manager.
+Thanks to the <a href="https://crates.io/crates/mlua"><code>mlua</code> crate</a>,
+we can embed a Lua interpreter in <code>lux-cli</code> and also
+provide an embeddable <code>lux-lua</code> bindings API.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>Meaning you can’t rug-pull or force-push an existing version maliciously.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+    </section>
+</article>
+
+            </div>
+        </main>
+
+        <footer>
+            <div class="container">
+              Site proudly generated by
+              <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+            </div>
+        </footer>
+    </body>
+</html>
