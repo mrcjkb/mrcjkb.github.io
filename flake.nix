@@ -24,10 +24,12 @@
       lib,
       ...
     }: let
-      sourceFilter = root: with lib.fileset; toSource {
-        inherit root;
-        fileset = fileFilter (file: lib.any file.hasExt [ "cabal" "hs" "md" ]) root;
-      };
+      sourceFilter = root:
+        with lib.fileset;
+          toSource {
+            inherit root;
+            fileset = fileFilter (file: lib.any file.hasExt ["cabal" "hs" "md"]) root;
+          };
       pname = "mrcjkbs-site";
       system = config.pkgs.system;
       cv-pkg = inputs.cv.packages.${system}.default;
