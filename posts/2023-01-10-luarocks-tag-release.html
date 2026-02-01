@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>mrcjkb.dev - Publish your Neovim plugins to LuaRocks</title>
+        <link rel="stylesheet" href="../css/default.css" />
+        <link rel="stylesheet" href="../css/syntax.css" />
+    </head>
+    <body>
+        <header>
+            <div class="container">
+              <div class="logo">
+                  <a href="../">mrcjkb.dev</a>
+              </div>
+              <nav>
+                  <a href="../">Home</a>
+                  <a href="../about.html">About</a>
+                  <a href="../contact.html">Contact</a>
+                  <a href="../cv.html">CV</a>
+                  <a href="../archive.html">Archive</a>
+                  <a href="../rss.xml">RSS feed</a>
+                  <a href="../atom.xml">Atom feed</a>
+              </nav>
+            </div>
+        </header>
+
+        <main role="main">
+            <div class="container">
+              <h1>Publish your Neovim plugins to LuaRocks</h1>
+              <article>
+    <section class="header">
+        Posted on January 10, 2023
+        
+    </section>
+    <section>
+        <p>This is a follow-up on a <a href="https://teto.github.io/posts/2021-09-17-neovim-plugin-luarocks.html">series of blog posts</a> by <span class="citation" data-cites="teto">@teto</span> that propose a solution to a major pain point of the Neovim plugin ecosystem - Dependency management.</p>
+<p>As someone who only recently started maintaining Neovim plugins, I have been quite frustrated with my experience so far…</p>
+<h2 id="the-current-status-quo">The current status quo</h2>
+<h3 id="a-horrible-ux">1. A horrible UX</h3>
+<p>…where users, not plugin authors, have to declare dependencies.</p>
+<p><a href="https://github.com/junnplus/lsp-setup.nvim#packernvim">Here’s</a> an example using <code>packer.nvim</code>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>use <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">'junnplus/lsp-setup.nvim'</span><span class="op">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="va">requires</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">'neovim/nvim-lspconfig'</span><span class="op">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">'williamboman/mason.nvim'</span><span class="op">,</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">'williamboman/mason-lspconfig.nvim'</span><span class="op">,</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>This shouldn’t be the user’s responsibility.</p>
+<p>What if dependencies are added or changed? It’s the user who has to update their config or deal with breakage.</p>
+<h3 id="plugin-authors-copypasting-code-instead-of-using-libraries">2. Plugin authors copy/pasting code instead of using libraries</h3>
+<p>…because they don’t want their users to have to deal with this horrible UX.</p>
+<p>I’ve been guilty of doing so myself.</p>
+<h3 id="instability">3. Instability</h3>
+<p>As far as I know, we currently have no easy way to declare version constraints for dependencies.
+Something that <a href="https://luarocks.org/">LuaRocks</a> supports, and which definitely should not be left up to the user.</p>
+<p>All of this potentially gets worse with transitive dependencies.</p>
+<h2 id="the-vicious-cycle">The vicious cycle</h2>
+<p>As I see it, we have ourselves a dilemma:</p>
+<ul>
+<li>Neovim plugin authors don’t use LuaRocks because plugin managers don’t support it.</li>
+<li>Plugin managers don’t support LuaRocks properly <a href="https://github.com/folke/lazy.nvim/issues/253#issuecomment-1411534276">because there aren’t enough plugins that use it</a>.</li>
+</ul>
+<p>This is something I’ve observed in many fields.
+For example, critics of electromobility have claimed that EVs will never be feasible, because we don’t have enough charging infrastructure.
+But which came first? Cars, or petrol stations?</p>
+<p>I’m a strong believer that we need plugin authors to publish their packages to LuaRocks before package managers start supporting it.
+Just like we had cars before petrol stations, and electric vehicles before charging infrastructure.</p>
+<h2 id="introducing-the-luarocks-tag-release-action">Introducing the <a href="https://github.com/marketplace/actions/luarocks-tag-release">LuaRocks tag release action</a></h2>
+<p>As a catalyst to alleviate these issues, <span class="citation" data-cites="teto">@teto</span> and I have started the <a href="https://github.com/nvim-neorocks/"><code>nvim-neorocks</code></a> organisation and released the <a href="https://github.com/marketplace/actions/luarocks-tag-release"><code>luarocks-tag-release</code></a> GitHub action.</p>
+<p>The goal is to minimise the effort for developers to release their plugins to LuaRocks,
+and to keep their published packages up to date.</p>
+<h3 id="how-to-get-started-as-a-plugin-developer">How to get started as a plugin developer?</h3>
+<ul>
+<li>All you need is a <a href="https://luarocks.org/login">LuaRocks account</a> and an <a href="https://luarocks.org/settings/api-keys">API key</a>.</li>
+<li>Add the API key to your repo’s <a href="https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository">GitHub actions secrets</a>.</li>
+<li>Finally, create a <code>.github/workflows/release.yml</code> in your repository that uses the <code>luarocks-tag-release</code> action:</li>
+</ul>
+<div class="sourceCode" id="cb2"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">name</span><span class="kw">:</span><span class="at"> LuaRocks release</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">on</span><span class="kw">:</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">push</span><span class="kw">:</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">tags</span><span class="kw">:</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="st">&quot;*&quot;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="fu">jobs</span><span class="kw">:</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">luarocks-release</span><span class="kw">:</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">runs-on</span><span class="kw">:</span><span class="at"> ubuntu-latest</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> LuaRocks upload</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">steps</span><span class="kw">:</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Checkout</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> actions/checkout@v3</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> LuaRocks Upload</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> nvim-neorocks/luarocks-tag-release@v4</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">env</span><span class="kw">:</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">LUAROCKS_API_KEY</span><span class="kw">:</span><span class="at"> ${{ secrets.LUAROCKS_API_KEY }}</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">with</span><span class="kw">:</span><span class="co"> # Optional inputs...</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="fu">          dependencies</span><span class="kw">: </span><span class="ch">|</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>            plenary.nvim</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>            nvim-lspconfig</span></code></pre></div>
+<p>Whenever you push a tag (expected to adhere to <a href="https://semver.org/">semantic versioning</a>),
+the workflow will:</p>
+<ol type="1">
+<li>Automatically fetch most of the relevant information (summary, license, …) from GitHub</li>
+<li>Generate a rockspec for the release</li>
+<li>Run a test to make sure LuaRocks can install your plugin locally</li>
+<li>Publish your plugin to LuaRocks</li>
+<li>Run a test to verify that your plugin can be installed from LuaRocks</li>
+</ol>
+<p>If you need more flexibility, you can <a href="https://github.com/marketplace/actions/luarocks-tag-release#inputs">specify additional inputs</a> or even use a <a href="https://github.com/marketplace/actions/luarocks-tag-release#template">rockspec template</a>.</p>
+<p>To advertise that your plugin is available on LuaRocks, you can add a shield to your README:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="al">![LuaRocks](https://img.shields.io/luarocks/v/&lt;user&gt;/&lt;plugin&gt;?logo=lua&amp;color=purple)</span><span class="co">](https://luarocks.org/modules/&lt;user&gt;/&lt;plugin&gt;)</span></span></code></pre></div>
+<p>For example:</p>
+<p><a href="https://luarocks.org/modules/neovim/nvim-lspconfig"><img src="https://img.shields.io/luarocks/v/neovim/nvim-lspconfig?logo=lua&amp;color=purple" alt="LuaRocks" /></a></p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="al">![LuaRocks](https://img.shields.io/luarocks/v/neovim/nvim-lspconfig?logo=lua&amp;color=purple)</span><span class="co">](https://luarocks.org/modules/neovim/nvim-lspconfig)</span></span></code></pre></div>
+<p>Here are some workflows and PRs you can use for inspiration:</p>
+<ul>
+<li><a href="https://github.com/neovim/nvim-lspconfig/blob/master/.github/workflows/release.yml"><code>nvim-lspconfig</code></a></li>
+<li><a href="https://github.com/mrcjkb/haskell-tools.nvim/blob/master/.github/workflows/release.yml"><code>haskell-tools.nvim</code></a></li>
+<li><a href="https://github.com/mrcjkb/telescope-manix/blob/master/.github/workflows/release.yml"><code>telescope-manix</code></a> - an extension that depends on <a href="https://github.com/nvim-telescope/telescope.nvim/pull/2364"><code>telescope.nvim</code></a>[^1].</li>
+<li><a href="https://github.com/nvim-treesitter/nvim-treesitter/pull/4109"><code>nvim-treesitter</code></a>[^1] - A more complex example that uses a template to build with Make.</li>
+<li><a href="https://github.com/nvim-lua/plenary.nvim/pull/458/files"><code>plenary.nvim</code></a>[^1] - Another example that uses a template so that LuaRocks runs tests.</li>
+<li><a href="https://github.com/ibhagwan/fzf-lua/blob/main/.github/workflows/luarocks-release.yaml"><code>fzf-lua</code></a> - A scheduled workflow that realeases versions based on the number of commits, if there have been new commits since the last run.</li>
+</ul>
+<p>[^1] pull request</p>
+<p>See also <a href="https://github.com/nvim-neorocks/luarocks-tag-release/wiki/Example-configurations">the workflow’s wiki page</a>.</p>
+<h3 id="what-can-you-do-as-a-neovim-user">What can you do as a Neovim user?</h3>
+<p>If you don’t maintain your own plugins, but want to see the ecosystem improve, you can suggest the workflow to your favourite plugins, or open a pull request.
+In most cases, it’s extremely easy to add the workflow. See the above PR examples.</p>
+<p>If you run in to problems or have any questions, don’t hesitate to <a href="https://github.com/nvim-neorocks/luarocks-tag-release/issues">open an issue</a> or <a href="https://github.com/nvim-neorocks/luarocks-tag-release/discussions">start a discussion</a>!</p>
+<h3 id="whats-next">What’s next?</h3>
+<p>For now, I am experimenting with a fork of LuaRocks, stripped down to the bare minimum needed to install packages.
+I am still uncertain of what that will lead to in the near future.</p>
+<ul>
+<li>Perhaps a package manager as a proof-of-concept?</li>
+<li>Maybe a package that can use Neovim as an interpreter to run LuaRocks so that it can use Neovim’s Lua API in test runs?</li>
+</ul>
+<p>Hopeful for the future. Let’s make this happen!</p>
+<h3 id="follow-up">Follow-up</h3>
+<p><a href="https://mrcjkb.dev/posts/2023-06-06-luarocks-test.html">Test your Neovim plugins with luarocks and busted</a></p>
+    </section>
+</article>
+
+            </div>
+        </main>
+
+        <footer>
+            <div class="container">
+              Site proudly generated by
+              <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+            </div>
+        </footer>
+    </body>
+</html>
