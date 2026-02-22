@@ -34,7 +34,6 @@
       system = config.pkgs.system;
       cv-pkg = inputs.cv.packages.${system}.default;
     in {
-      compiler = "ghc96";
       cabal = {
         author = "Marc Jakobi";
         build-type = "Simple";
