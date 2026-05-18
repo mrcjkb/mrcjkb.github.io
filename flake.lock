@@ -2,17 +2,16 @@
   "nodes": {
     "cv": {
       "inputs": {
-        "flake-parts": "flake-parts",
         "nixpkgs": [
           "nixpkgs"
         ]
       },
       "locked": {
-        "lastModified": 1772657194,
-        "narHash": "sha256-hNN1r8ntjE64ZRDjoOmYl8eYE7SZpKCU9HdOTpNUo3k=",
+        "lastModified": 1779117665,
+        "narHash": "sha256-4XIqsBJkf8Iya5uD2iec5Dq6gFqJOfetXkf8XBj5Us4=",
         "owner": "mrcjkb",
         "repo": "cv",
-        "rev": "fbb7c683f61e8b1dc1ba95a732f9012f188067a2",
+        "rev": "a90e3aaa0d91f29e1a1a7b7752508934e28e27c2",
         "type": "github"
       },
       "original": {
@@ -40,24 +39,6 @@
     "flake-parts": {
       "inputs": {
         "nixpkgs-lib": "nixpkgs-lib"
-      },
-      "locked": {
-        "lastModified": 1719994518,
-        "narHash": "sha256-pQMhCCHyQGRzdfAkdJ4cIWiw+JNuWsTX7f0ZYSyz0VY=",
-        "owner": "hercules-ci",
-        "repo": "flake-parts",
-        "rev": "9227223f6d922fee3c7b190b2cc238a99527bbb7",
-        "type": "github"
-      },
-      "original": {
-        "owner": "hercules-ci",
-        "repo": "flake-parts",
-        "type": "github"
-      }
-    },
-    "flake-parts_2": {
-      "inputs": {
-        "nixpkgs-lib": "nixpkgs-lib_2"
       },
       "locked": {
         "lastModified": 1778716662,
@@ -154,18 +135,6 @@
     },
     "nixpkgs-lib": {
       "locked": {
-        "lastModified": 1719876945,
-        "narHash": "sha256-Fm2rDDs86sHy0/1jxTOKB1118Q0O3Uc7EC0iXvXKpbI=",
-        "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs/archive/5daf0514482af3f97abaefc78a6606365c9108e2.tar.gz"
-      },
-      "original": {
-        "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs/archive/5daf0514482af3f97abaefc78a6606365c9108e2.tar.gz"
-      }
-    },
-    "nixpkgs-lib_2": {
-      "locked": {
         "lastModified": 1777168982,
         "narHash": "sha256-GOkGPcboWE9BmGCRMLX3worL4EMnsnG8MyKmXNeYuhQ=",
         "owner": "nix-community",
@@ -182,7 +151,7 @@
     "root": {
       "inputs": {
         "cv": "cv",
-        "flake-parts": "flake-parts_2",
+        "flake-parts": "flake-parts",
         "git-hooks": "git-hooks",
         "hix": "hix",
         "nixpkgs": "nixpkgs"
