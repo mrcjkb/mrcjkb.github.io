@@ -1,9 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import           Hakyll
-import           Prelude
-import           Text.Pandoc.Highlighting
-import           Text.Pandoc.Options      (WriterOptions (..))
+import  Data.Map qualified as Map
+import  Hakyll
+import  Prelude
+import  Skylighting.Types (Style (..), TokenStyle (..), Color, ToColor (..), TokenType (..), defStyle)
+import  Text.Pandoc.Highlighting
+import  Text.Pandoc.Options (WriterOptions (..))
 
 main :: IO ()
 main = hakyll  do
@@ -95,7 +97,7 @@ postCtx =
     defaultContext
 
 pandocCodeStyle :: Style
-pandocCodeStyle = haddock
+pandocCodeStyle = catppuccinMocha
 
 pandocCompiler' :: Compiler (Item String)
 pandocCompiler' =
@@ -120,3 +122,42 @@ mkFeed render = do
     posts <- fmap (take 10) . recentFirst =<< loadAllSnapshots "posts/*" "content"
     render feedConfiguration feedCtx posts
 
+catppuccinMocha :: Style
+catppuccinMocha = Style{
+    backgroundColor = Nothing
+  , defaultColor = Nothing
+  , lineNumberColor = color 0xcdd6f4
+  , lineNumberBackgroundColor = Nothing
+  , tokenStyles = Map.fromList
+    [ (KeywordTok, defStyle{ tokenColor = color 0xcba6f7 })
+    , (FunctionTok, defStyle{ tokenColor = color 0x89b4fa })
+    , (OperatorTok, defStyle{ tokenColor = color 0x74c7ec })
+    , (CharTok, defStyle{ tokenColor = color 0xa6e3a1 })
+    , (StringTok, defStyle{ tokenColor = color 0xa6e3a1 })
+    , (CommentTok, defStyle{ tokenColor = color 0x9399b2 })
+    , (OtherTok, defStyle{ tokenColor = color 0xcdd6f4 })
+    , (AlertTok, defStyle{ tokenColor = color 0xf38ba8 })
+    , (ErrorTok, defStyle{ tokenColor = color 0xf38ba8, tokenBold = True })
+    , (WarningTok, defStyle{ tokenColor = color 0xfab387, tokenBold = True })
+    , (DataTypeTok, defStyle{ tokenColor = color 0xf9e2af, tokenBold = True })
+    , (ConstantTok, defStyle)
+    , (SpecialCharTok, defStyle{ tokenColor = color 0x94e2d5 })
+    , (VerbatimStringTok, defStyle{ tokenColor = color 0x94e2d5 })
+    , (SpecialStringTok, defStyle{ tokenColor = color 0x94e2d5 })
+    , (ImportTok, defStyle)
+    , (VariableTok, defStyle{ tokenColor = color 0xb4befe })
+    , (ControlFlowTok, defStyle{ tokenColor = color 0x89b4fa })
+    , (OperatorTok, defStyle)
+    , (BuiltInTok, defStyle)
+    , (ExtensionTok, defStyle)
+    , (PreprocessorTok, defStyle{ tokenColor = color 0xf38ba8 })
+    , (DocumentationTok, defStyle{ tokenColor = color 0xa6e3a1 })
+    , (AnnotationTok, defStyle{ tokenColor = color 0xa6e3a1 })
+    , (CommentVarTok, defStyle{ tokenColor = color 0xa6e3a1 })
+    , (AttributeTok, defStyle)
+    , (InformationTok, defStyle{ tokenColor = color 0xa6e3a1 })
+    ]
+  }
+  where
+   color :: Int -> Maybe Color
+   color = toColor

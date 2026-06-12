@@ -6,10 +6,22 @@ html {
 body {
   font-size: 1.6rem;
   font-family: sans-serif;
-  color: #000;
+  color: #FFFFFF;
+  background: #202020;
   margin: 0;
   padding: 0;
 }
+
+a:link {
+  color: #89b4fa;
+}
+a:visited {
+  color: #cba6f7
+}
+a:hover {
+  color: #74c7ec
+}
+
 
 /* Container class for width management */
 .container {
@@ -20,7 +32,7 @@ body {
 }
 
 header {
-  border-bottom: 0.2rem solid #B480D6;
+  border-bottom: 0.2rem solid #cba6f7;
 }
 
 nav {
@@ -30,7 +42,7 @@ nav {
 nav a {
   font-size: 1.8rem;
   font-weight: bold;
-  color: #212121;
+  color: #FFFFFF;
   text-decoration: none;
   text-transform: uppercase;
 }
@@ -38,7 +50,7 @@ nav a {
 footer {
   margin-top: 3rem;
   padding: 1.2rem 0;
-  border-top: 0.2rem solid #B480D6;
+  border-top: 0.2rem solid #cba6f7;
   font-size: 1.2rem;
   color: #C5C8C6;
 }

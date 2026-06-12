@@ -81,7 +81,9 @@
           enable = true;
           source-dirs = "app";
           dependencies = [
+            "containers"
             "hakyll"
+            "skylighting-core"
             "pandoc"
           ];
         };
