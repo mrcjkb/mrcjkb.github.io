@@ -1,0 +1,1623 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"
+    xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <channel>
+        <title>mrcjkb</title>
+        <link>mrcjkb.dev</link>
+        <description><![CDATA[My Hakyll site]]></description>
+        <atom:link href="mrcjkb.dev/rss.xml" rel="self"
+                   type="application/rss+xml" />
+        <lastBuildDate>Wed, 08 Oct 2025 00:00:00 UT</lastBuildDate>
+        <item>
+    <title>Why Haskell is the perfect fit for renewable energy tech</title>
+    <link>mrcjkb.dev/posts/2025-10-08-haskell-for-renewables.html</link>
+    <description><![CDATA[<article>
+    <section class="header">
+        Posted on October  8, 2025
+        
+    </section>
+    <section>
+        <p>My background isn’t the typical path to becoming a software engineer.
+I didn’t study computer science. Instead, I earned both a bachelor’s and a master’s degree
+in Renewable Energy Systems from HTW Berlin.
+Somehow, that journey led me to become a professional Haskell developer,
+building distributed power management and delivery systems.</p>
+<p>In Europe, the tech job market is dominated by object-oriented languages like Java and C#.
+Meanwhile, Haskell remains a relatively niche language,
+often associated with blockchain and finance.
+Yet, in my experience, Haskell is a perfect fit for the complexities of renewable energy technology,
+an area that could greatly benefit from the power of functional programming.</p>
+<p>In this article, I’ll share my journey into Haskell and explain
+why I believe it has untapped potential in the renewable energy sector,
+despite its limited presence in the mainstream job market.</p>
+<h2 id="dont-panic-about-thermodynamics">Don’t panic about thermodynamics</h2>
+<p>During my university years, thermodynamics and energy process engineering
+were notorious among students.
+The courses were packed with daunting formulas - far too many to memorize,
+and far too complex to reference in the heat of an exam.</p>
+<p>But one piece of advice from our professor changed everything for me.
+She encouraged us to truly understand the international system of units (SI),
+especially by practicing how to juggle and decompose them into their seven base units<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>.</p>
+<p>For instance, one can break down the unit Watt (power)
+into its base components: kilogram, metre, and second (<code>W = kg · m² / s³</code>).
+With this trick, I could solve problems by letting the units guide me,
+rather than relying on rote memorization.
+I minimized what I needed to write down and found myself finishing exams with plenty
+of time to spare, and scoring perfectly every time.</p>
+<p>What I didn’t realise at the time, was that this mindset of letting structure and units
+guide my reasoning was strikingly similar to type-driven development,
+a concept I’d only discover years later.</p>
+<h2 id="flexible-systems-fragile-scripts">Flexible systems, fragile scripts</h2>
+<p>Early on during my studies, I started working part-time in one of my university’s research groups.
+On my first day, I was handed a MATLAB book and, after a week of self-study,
+began contributing to the development of simulation models and control algorithms
+for solar storage systems.</p>
+<p>These models and algorithms are especially important for renewable energy systems.
+While traditional fossil power sources tend to be sluggish and operate in predictable, steady ways,
+renewables are inherently variable.
+They thrive when supported by flexibility and intelligent control.</p>
+<p>The code we wrote was anything but pretty.
+For example, here’s a function we published that simulates an AC-coupled lithium-ion battery:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> [<span class="va">Ppv</span><span class="op">,</span> <span class="va">Pbat</span><span class="op">,</span> <span class="va">Ppvs</span><span class="op">,</span> <span class="va">Pbs</span><span class="op">,</span> <span class="va">Pperi</span><span class="op">,</span> <span class="va">soc</span>] <span class="op">=</span> <span class="va">PerModAC</span>(<span class="va">s</span><span class="op">,</span> <span class="va">sim</span><span class="op">,</span> <span class="va">pvmod</span><span class="op">,</span> <span class="va">Pl</span><span class="op">,</span> <span class="va">ppv</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="va">SOC_h</span> <span class="op">=</span> <span class="va">s</span>.<span class="va">SOC_h</span><span class="op">;</span> <span class="co">% Hysteresis threshold for the recharging of the battery</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="va">P_AC2BAT_DEV</span> <span class="op">=</span> <span class="va">s</span>.<span class="va">P_AC2BAT_DEV</span><span class="op">;</span> <span class="co">% Mean stationary deviation of the charging power in W</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="va">P_BAT2AC_DEV</span> <span class="op">=</span> <span class="va">s</span>.<span class="va">P_BAT2AC_DEV</span><span class="op">;</span> <span class="co">% Mean stationary deviation of the discharging power in W</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">% ...</span></span></code></pre></div>
+<p>I won’t get into too much detail, but the main issue with scripting languages
+like Python or MATLAB quickly became apparent:</p>
+<p>In this example, the argument <code>ppv</code> is expected to be a vector containing the
+normalized DC power output of the PV generator in <code>kW/kWp</code><a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>.</p>
+<p>However, nothing stops the caller of this function from passing in anything they want - even
+a string.
+And, dare I say, I’m quite confident that I have never met a MATLAB programmer
+who knows what a unit test is.
+Our approach to testing involved generating graphs and comparing them qualitatively
+with measured data.
+This process is both time-consuming and error-prone, and it only proves effective if done
+frequently and validated thoroughly.
+It relies heavily on human effort rather than leveraging the assistance of automated tools.
+Without proper safeguards in place, small errors can easily go unnoticed, resulting in fragile code
+and more difficult troubleshooting.</p>
+<h2 id="why-traditional-oop-falls-short">Why traditional OOP falls short</h2>
+<p>My first full-time job was writing simulation software for sector-coupled renewable
+energy systems in Java.
+Having a compiler that provides some type safety was a huge improvement over
+my prior MATLAB experiences.
+To compare, a simulation model for a battery might look something like this<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="kw">class</span> ACBattery <span class="op">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  ACBatterySpec spec<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Energy content in watt-hours</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">double</span> energyWh<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Constructor omitted for brevity</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="co">/**</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co">  * </span><span class="an">@param</span><span class="co"> </span><span class="an">powerW</span><span class="co"> -</span> The charging power in watts</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="co">*</span> <span class="an">@param</span><span class="co"> </span><span class="an">durationS</span><span class="co"> -</span> The duration in seconds</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="co">*/</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="kw">public</span> <span class="dt">void</span> <span class="fu">charge</span><span class="op">(</span><span class="dt">double</span> powerW<span class="op">,</span> <span class="dt">double</span> durationS<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Implementation omitted for brevity</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>While callers can no longer pass in completely wrong types, two major issues remain:</p>
+<ol type="1">
+<li>The units are encoded <em>in the variable names</em>.</li>
+<li>Both arguments of the <code>charge</code> function are semantically different, but they have
+the same type.</li>
+</ol>
+<p>A third issue is that object-oriented languages are designed to be stateful,
+which causes difficulty with concurrency and makes testing very challenging.</p>
+<p>This approach is not expressive enough
+to prevent someone from passing in a value with the wrong unit,
+or from misusing the arguments in the implementation.
+As a result, unit tests must be written just to compensate for this lack of type safety.</p>
+<p>Technically, it’s possible to define types for each argument:
+For example, consider using the <a href="https://unitsofmeasurement.github.io/unit-api/"><code>unit-api</code></a>
+library to encode units:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="kw">class</span> ACBattery <span class="op">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  ACBatterySpec spec<span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  Quantity<span class="op">&lt;</span>Energy<span class="op">&gt;</span> energy<span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Constructor omitted for brevity</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="co">/**</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co">   * </span><span class="an">@param</span><span class="co"> </span><span class="an">power</span><span class="co"> </span>Charging power</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>   <span class="co">*</span> <span class="an">@param</span><span class="co"> </span><span class="an">duration</span><span class="co"> </span>Charging duration</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>   <span class="co">*/</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="kw">public</span> <span class="dt">void</span> <span class="fu">charge</span><span class="op">(</span>Quantity<span class="op">&lt;</span>Power<span class="op">&gt;</span> power<span class="op">,</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>                     Quantity<span class="op">&lt;</span><span class="bu">Time</span><span class="op">&gt;</span> duration<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    Quantity<span class="op">&lt;</span>Energy<span class="op">&gt;</span> energyAdded <span class="op">=</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>      power<span class="op">.</span><span class="fu">multiply</span><span class="op">(</span>duration<span class="op">).</span><span class="fu">asType</span><span class="op">(</span>Energy<span class="op">.</span><span class="fu">class</span><span class="op">);</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="fu">energy</span> <span class="op">=</span> <span class="kw">this</span><span class="op">.</span><span class="fu">energy</span><span class="op">.</span><span class="fu">add</span><span class="op">(</span>energyAdded<span class="op">);</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>This approach is more robust:</p>
+<ul>
+<li>You cannot accidentally pass a length or temperature where a power or time is expected.</li>
+<li>The compiler will prevent you from trying to compose incompatible units.</li>
+</ul>
+<p>But in a language like Java, this comes at a cost:</p>
+<ul>
+<li>It means object allocation, runtime conversions and dynamic dispatch,
+which can introduce significant performance costs.</li>
+<li>Instead of using basic arithmetic operators (<code>+</code>, <code>-</code>, <code>*</code>, …),
+you now have to use redefined functions (<code>add</code>, <code>multiply</code>, etc.).</li>
+</ul>
+<p>Not to mention a significant increase in verbosity / boilerplate you must maintain.
+That harms the one thing business cares about: <em>developer productivity</em>.</p>
+<p>In my experience working across multiple Java codebases,
+all of them ultimately relied on primitives for physical quantities,
+sacrificing safety for simplicity and speed.</p>
+<h2 id="type-driven-development-the-haskell-advantage">Type-Driven Development: The Haskell advantage</h2>
+<p>Having previously reaped the benefits of letting units guide my reasoning,
+it didn’t take long for me to start exploring whether type systems could
+offer the same reliability.
+About five years ago, I taught myself Haskell, and a year later joined my current employer,
+who gave me the opportunity to use it professionally in the renewable domain
+I’m so passionate about.</p>
+<p>In Haskell, types are a rigorous framework for representing real-world constraints directly in code.
+Here’s how the same <code>charge</code> function’s type signature might look,
+using Haskell’s <a href="https://hackage.haskell.org/package/dimensional"><code>dimensional</code></a>
+library, which “provides statically-checked dimensional arithmetic for physical quantities,
+using the 7 SI base dimensions”:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">ACBattery</span> num</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> <span class="dt">ACBattery</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> spec ::</span> <span class="dt">ACBatterySpec</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> energy ::</span> <span class="dt">Energy</span> num</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="ot">charge ::</span> <span class="dt">Fractional</span> num <span class="ot">=&gt;</span> <span class="dt">Power</span> num <span class="ot">-&gt;</span> <span class="dt">Time</span> num <span class="ot">-&gt;</span> <span class="dt">ACBattery</span> num <span class="ot">-&gt;</span> <span class="dt">ACBattery</span> num</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>charge power time battery <span class="ot">=</span> <span class="co">-- Implementation omitted for brevity</span></span></code></pre></div>
+<p>If you’re unfamiliar with a functional language like Haskell, this might look cryptic.
+But bear with me - let’s break it down:</p>
+<ul>
+<li>The function uses a type constraint, <code>Fractional num</code>, which lets the caller specify
+the underlying numeric representation.
+For example, <code>num</code> could be <code>Double</code> for floating-point, or something more precise like
+<code>Pico</code> or <code>Milli</code> for <a href="https://hackage.haskell.org/package/base-4.21.0.0/docs/Data-Fixed.html"><code>fixed-point</code></a>.</li>
+</ul>
+<p>A less generic version of this function might look like:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ot">charge ::</span> <span class="dt">Power</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Time</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">ACBattery</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">ACBattery</span> <span class="dt">Double</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>charge power time battery <span class="ot">=</span> <span class="co">-- Implementation omitted for brevity</span></span></code></pre></div>
+<ul>
+<li><p>The first and second arguments are the power we supply to the battery
+and the amount of time we supply it for.</p></li>
+<li><p>The third argument, <code>ACBattery</code>, is the battery’s current state.
+Haskell is stateless by design, so the (immutable) state is passed in,
+and a new state is returned, making reasoning about code and testing much simpler.</p></li>
+<li><p>The final <code>-&gt; ACBattery num</code> means the function evaluates to the battery’s updated state
+after charging.</p></li>
+</ul>
+<p>Notice the absence of error-prone, manual unit conversions, or units in the variable names?
+This aligns perfectly with the <a href="https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/">Parse, don’t validate principle</a>.
+By encoding expectations in the types, you ensure that only correctly-formed data
+enters your core logic.
+Once data are parsed into these types, you don’t need to check them at runtime,
+they’re guaranteed by the compiler.</p>
+<p>Let’s simplify the function even further, focusing on just energy transformation:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ot">charge ::</span> <span class="dt">Power</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Time</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Energy</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Energy</span> <span class="dt">Double</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>charge power time energy <span class="ot">=</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    energy <span class="op">+</span> power <span class="op">*</span> time</span></code></pre></div>
+<p>Instead of a battery state, this version takes the battery’s energy before charging
+and evaluates to the energy after charging.</p>
+<p>Unlike in Java, where using units libraries requires verbose method calls like <code>add</code> and <code>multiply</code>,
+we can use our familiar arithmetic operators directly.
+Another advantage is that because <code>dimensional</code> uses Haskell’s <a href="https://wiki.haskell.org/index.php?title=Newtype"><code>newtype</code> declarations</a>,
+each quantity is represented internally as its underlying numeric type.
+This means that, at runtime, we can expect negligible overhead compared to
+plain numeric operations<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a> - unlike Java’s units libraries,
+which rely on object allocation and dynamic dispatch.</p>
+<p>When calling the <code>charge</code> function, you specify the units directly:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>example <span class="ot">=</span> charge chargingPower duration currentEnergy</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    chargingPower <span class="ot">=</span> <span class="dv">1</span> <span class="op">*~</span> kilo <span class="dt">Watt</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    duration <span class="ot">=</span> <span class="dv">30</span> <span class="op">*~</span> second</span></code></pre></div>
+<p>The dimensional library ensures that only compatible quantities can be composed.
+If you accidentally swap arguments or use the wrong operation, you won’t get mysterious runtime bugs,
+you’ll get a clear, immediate type error:</p>
+<p><img src="/images/charge_type_error.png" style="float: center; margin: 10px; max-width: 900px" /></p>
+<p>If I multiply <code>power * time</code> instead of trying to divide, the error disappears,
+because the units align.
+It feels almost magical: Haskell’s type system, together with <code>dimensional</code>,
+lets the compiler guide you toward correct implementations.
+Unit safety, domain modeling, and strong typing aren’t just academic.
+They’re practical tools for building reliable, maintainable software in renewable energy and beyond.</p>
+<p>All this time I had no idea: My thermodynamics professor had taught me that Haskell is
+the perfect fit for renewable energy tech!</p>
+<h2 id="test-driven-development-focus-on-what-matters">Test-Driven Development: Focus on what matters!</h2>
+<p>I’m a strong advocate for <a href="https://wiki.c2.com/?FakeItUntilYouMakeIt">test-driven development (fake it till you make it)</a>.
+In my experience, it’s the best way to ensure high-quality, meaningful test coverage.
+One major reason people avoid TDD is that it can seem tedious,
+especially in traditional OOP, where unit tests often compensate for weak type safety.
+With Haskell, we can write tests that catch far more bugs with far less code,
+by focusing on what matters: properties and behaviour.</p>
+<p>Powerful libraries like <a href="https://hackage.haskell.org/package/QuickCheck"><code>QuickCheck</code></a>,
+and its integration with frameworks such as <a href="https://hackage.haskell.org/package/tasty-quickcheck"><code>tasty-quickcheck</code></a>,
+allow you to express and test mathematical properties directly,
+rather than writing tests for specific cases or edge conditions.</p>
+<p>Here’s a hypothetical example:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ot">chargingTest ::</span> <span class="dt">TestTree</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>chargingTest <span class="ot">=</span> testGroup <span class="st">&quot;Charging&quot;</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  [ testProperty <span class="st">&quot;does not exceed maximum capacity&quot;</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>      \(<span class="dt">Positive</span> duration) (<span class="dt">Positive</span> power) (<span class="dt">Small</span> energyDelta) <span class="ot">-&gt;</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>        <span class="kw">let</span> previousState <span class="ot">=</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>              testBattery { energy <span class="ot">=</span> maxCapacity testBatterySpec <span class="op">-</span> <span class="fu">abs</span> energyDelta }</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>            newState <span class="ot">=</span> charge power duration previousState</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>            newEnergy <span class="ot">=</span> energy newState</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        <span class="kw">in</span> newEnergy <span class="op">&lt;=</span> maxCapacity testBatterySpec</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  , testProperty <span class="st">&quot;does not exceed nominal AC charging power&quot;</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>      \(<span class="dt">Positive</span> duration) (<span class="dt">NonNegative</span> deltaPower) (<span class="dt">NonNegative</span> energy) <span class="ot">-&gt;</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>        <span class="co">-- Implementation omitted for brevity</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- ...</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  ]</span></code></pre></div>
+<p>With property-based testing, the framework generates a wide variety of (pseudo-)random inputs for you,
+so you don’t have to hand-craft edge cases.
+This approach lets you verify that your code upholds the core invariants and
+physical laws of your domain, rather than just checking a handful of examples.</p>
+<h2 id="credits">Credits</h2>
+<p>Thanks to Alex Drake (who I hack on Haskell clean tech with in our free time) for proof-reading.</p>
+<h2 id="discuss">Discuss</h2>
+<ul>
+<li><a href="https://news.ycombinator.com/item?id=45514024">HackerNews</a></li>
+<li><a href="https://discourse.haskell.org/t/why-haskell-is-the-perfect-fit-for-renewable-energy-tech/">Haskell discourse</a></li>
+<li><a href="https://www.reddit.com/r/haskell/s/Wy8E2s7UB4">Reddit</a></li>
+</ul>
+<section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p>second, metre, kilogram, ampere, kelvin, mole and candela.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>kiloWatts per kiloWatt-peak (= peak power of the PV generator).<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>Strongly simplified for brevity<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p>Disclaimer: <code>dimensional</code> does not yet provide any benchmarks at the time of writing.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+    </section>
+</article>
+]]></description>
+    <pubDate>Wed, 08 Oct 2025 00:00:00 UT</pubDate>
+    <guid>mrcjkb.dev/posts/2025-10-08-haskell-for-renewables.html</guid>
+    <dc:creator>Marc Jakobi</dc:creator>
+</item>
+<item>
+    <title>Lumen Labs - Luanox and Lux updates</title>
+    <link>mrcjkb.dev/posts/2025-09-16-lumen-labs-announcement.html</link>
+    <description><![CDATA[<article>
+    <section class="header">
+        Posted on September 16, 2025
+        
+    </section>
+    <section>
+        <p><img src="https://github.com/lumen-oss/lux/raw/master/lux-logo.svg" width="300" />
+<img src="https://beta.luanox.org/images/logo.svg" width="300" /></p>
+<p>A few months ago, I posted <a href="https://mrcjkb.dev/posts/2025-04-07-lux-announcement.html">an introduction to Lux</a>,
+a modern package manager for Lua that treats Neovim and Nix as first-class citizens
+and is compatible with the <a href="https://luarocks.org">LuaRocks</a> ecosystem.</p>
+<p>We have a few updates to share.</p>
+<h2 id="lumen-labs">Lumen Labs</h2>
+<p>Up until recently, <a href="https://github.com/lumen-oss">we</a> had been working under a temporary GitHub org:
+nvim-neorocks.</p>
+<p>We have now formalized as a proper open-source organization.
+You can find us under the name “Lumen Labs” (definitely not an evil corporation).
+If you resonate with our mission, we’ve also set up an <a href="https://opencollective.com/lumen-labs">OpenCollective</a>.</p>
+<p>We aim to up our transparency with more blog posts,
+a higher rater of public announcements and status updates, and more.</p>
+<h2 id="luanox">Luanox</h2>
+<p>A frequent question we received when we announced Lux was:
+“Why is it not written in Lua?”<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<p>Well, <a href="https://github.com/NTBBloodbath/">NTBBloodbath</a> and <a href="https://github.com/vhyrro">Vhyrro</a>
+have been writing lots of Elixir to build <a href="beta.luanox.org">Luanox</a>,
+a work-in-progress modern hosting site for Lua packages,
+in the spirit of crates.io or PyPI.</p>
+<p>Waiting on luarocks.org to return a massive manifest file,
+just so we can check if a single package exists,
+is taking up about 50 % of Lux’s runtime for basic package management operations.
+For this reason, we wanted to create something snappy, secure and new,
+while still retaining compatibility:</p>
+<ul>
+<li>Licensed under AGPL-3.0.</li>
+<li>No storage of persistent information that could be leaked
+(no passwords; stateless JWT tokens).</li>
+<li>A custom service that runs in a separate container
+and verifies that rockspecs do not do anything malicious.</li>
+<li>Immutable packages<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>.</li>
+<li>Uses <a href="https://www.openapis.org/">OpenAPI</a>.</li>
+<li>On the roadmap:
+2FA for package uploads and facilities for recovering from an account takeover.</li>
+</ul>
+<p>The site itself doesn’t store any persistent information that could be leaked.</p>
+<p>We’re currently hosting a beta version of the site over at <a href="https://beta.luanox.org">https://beta.luanox.org</a>.
+On the Lux side, we’re also working on integrating the site so people
+can start uploading test packages there!
+Once we’re confident in the site’s performance,
+we’ll move all the data over to the final product.</p>
+<p>In the meantime, feel free to try making an account.
+Beta users will get a special badge in the final release :D</p>
+<p><img src="/images/luanox.png" style="float: center; margin: 10px; max-width: 900px" /></p>
+<h2 id="lux-updates">Lux updates</h2>
+<p>With the help of users, who have been rigorously testing and contributing to <a href="https://github.com/lumen-oss/lux">Lux</a>,
+we’ve squashed many bugs and significantly upped compatibility with luarocks packages.</p>
+<p>Some notable new features since the previous announcement:</p>
+<ul>
+<li>Lux is now licensed under LGPL-3.0-or-later.</li>
+<li>Static type checking based on <a href="https://luals.github.io/wiki/annotations/">LuaCATS annotations</a>,
+powered by <a href="https://github.com/EmmyLuaLs/emmylua-analyzer-rust"><code>emmylua-analyzer-rust</code></a>.
+With knowledge of your project’s dependencies, <code>lux-cli</code> can generate a <code>.luarc.json</code>
+for use by the type checker and a language server.</li>
+<li>A <code>busted-nlua</code> test backend for easily running <a href="https://github.com/lunarmodules/busted"><code>busted</code></a>
+tests with Neovim as the Lua interpreter.</li>
+<li>For packages that haven’t been released to luarocks yet, the <code>lux.toml</code> format now lets
+you specify Git dependencies.</li>
+<li>A templating system that lets you configure how Lux injects source and
+version information into generated rockspecs.</li>
+<li>We now publish pre-built binary artifacts for:
+<ul>
+<li>Arch Linux (via the <a href="https://aur.archlinux.org/packages/lux-cli-bin">AUR</a>)</li>
+<li>Debian</li>
+<li>AppImage (Linux)</li>
+<li>macOS (arm64)</li>
+<li>Windows (x64, MSVC)</li>
+</ul>
+All binary packages come bundled with the <code>lux-lua</code>
+bindings API for all supported Lua versions.</li>
+</ul>
+<h2 id="our-next-steps">Our next steps</h2>
+<h3 id="ecosystem-support-in-luanox">Ecosystem support in Luanox</h3>
+<p>Our project was born out of efforts to start pushing luarocks adoption in the Neovim ecosystem.
+One complaint we’ve heard about this from the community is that uploading Neovim-only packages
+to a generic Lua registry feels weird.
+For this reason, we will be adding special concepts that will make publishing Neovim plugins
+to a central Lua registry feel less “hacky” and more deliberate.
+We’ll be revamping luarocks’s old concept of manifests and turning them into an easy way
+to distinguish Lua packages specifically built for a given platform (Neovim, Nginx, etc.),
+with dedicated search pages just for those manifests!
+We are also working on a dedicated compatibility layer to make the luarocks CLI also work with Luanox :)</p>
+<h3 id="lux-and-lux.nvim">Lux and lux.nvim</h3>
+<p>On the Lux side, we will update Lux to use Luanox as its main server,
+falling back to luarocks.org for now.
+Due to a LuaJIT bug, our <a href="https://github.com/lumen-oss/rocks.nvim/pull/644">lux.nvim rewrite of rocks.nvim</a>
+is unfortunately on hold while we wait for <a href="https://github.com/luarocks/luarocks-site/pull/229">luarocks.org to support serving zipped JSON manfiests</a>.
+But we will pick it up again as soon as possible!</p>
+<h2 id="thank-you">Thank you</h2>
+<p>We’d like to express our heartfelt gratitude for all the tremendous support we have received
+in making Lua better for everyone.
+Thanks to the OpenCollective donations we’ve now been able to purchase a dedicated domain.
+And without all of the bug reports and external contributions,
+Lux wouldn’t even be close to where it is now!</p>
+<section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p>To address this: Lua is fantastic as a scripting language.
+But the compile time guarantees provided by Rust’s expressive type system
+make it a far better choice for a project of Lux’s scope.
+The Rust ecosystem, thanks to Cargo, offers powerful tooling
+that makes it ideal for writing a package manager.
+Thanks to the <a href="https://crates.io/crates/mlua"><code>mlua</code> crate</a>,
+we can embed a Lua interpreter in <code>lux-cli</code> and also
+provide an embeddable <code>lux-lua</code> bindings API.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>Meaning you can’t rug-pull or force-push an existing version maliciously.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+    </section>
+</article>
+]]></description>
+    <pubDate>Tue, 16 Sep 2025 00:00:00 UT</pubDate>
+    <guid>mrcjkb.dev/posts/2025-09-16-lumen-labs-announcement.html</guid>
+    <dc:creator>Marc Jakobi</dc:creator>
+</item>
+<item>
+    <title>Announcing Lux - a luxurious package manager for Lua</title>
+    <link>mrcjkb.dev/posts/2025-04-07-lux-announcement.html</link>
+    <description><![CDATA[<article>
+    <section class="header">
+        Posted on April  7, 2025
+        
+    </section>
+    <section>
+        <p><img src="https://github.com/nvim-neorocks/lux/raw/master/lux-logo.svg" width="300" /></p>
+<p>It’s time Lua got the ecosystem it deserves!</p>
+<p>For a bit over a year, we have been cooking up <a href="https://github.com/nvim-neorocks/lux">Lux</a>,
+a new package manager for creating, maintaining and publishing Lua code.
+It does this through a simple and intuitive CLI inspired by other
+well-known package managers like <a href="https://doc.rust-lang.org/cargo/"><code>cargo</code></a>.</p>
+<p>Today, we feel the project has hit a state of “very usable for everyday tasks”<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>.</p>
+<h2 id="features">Features</h2>
+<ul>
+<li>Fully portable between systems.</li>
+<li>Parallel builds and installs. 🚀</li>
+<li>Handles the installation of Lua headers<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> for you.
+Forget about users complaining they have the wrong Lua headers installed on their system.
+All you need to do is specify compatible lua versions.</li>
+<li>A fully embeddable <code>lux-lib</code> crate, which can even be built to expose a Lua API.</li>
+<li>Has an actual notion of a “project”, with a simple governing <code>lux.toml</code> file.
+<ul>
+<li>Uses the <code>lux.toml</code> to auto-generate rockspecs.
+Say goodbye to managing 10 different rockspec files in your repository. 🎉</li>
+</ul></li>
+<li>Powerful lockfile support.
+<ul>
+<li>Fully reproducible builds and developer environments.</li>
+<li>Source + rockspec hashes that can be used to make Lux easy to integrate with <a href="https://nixos.org/">Nix</a>.</li>
+</ul></li>
+<li>Integrated code formatting (<code>lx fmt</code>) and linting (<code>lx check</code>)
+powered by <a href="https://github.com/JohnnyMorganz/StyLua"><code>stylua</code></a>
+and <a href="https://github.com/mpeterv/luacheck"><code>luacheck</code></a>.</li>
+<li>Native support for running tests with <a href="https://lunarmodules.github.io/busted/"><code>busted</code></a>.
+<ul>
+<li>Including the ability to use Neovim as a Lua interpreter.</li>
+<li>Sets up a pure environment.</li>
+</ul></li>
+<li>Compatible with the luarocks ecosystem.
+<ul>
+<li>In case you have a complex rockspec that you don’t want to rewrite to TOML,
+lux allows you to create an <code>extra.rockspec</code> file, so everything just works.</li>
+<li>Need to install a package that uses a custom luarocks build backend?
+Lux can install luarocks and shell out to it for the build step,
+while managing dependencies natively.</li>
+</ul></li>
+</ul>
+<h2 id="motivation">Motivation</h2>
+<h3 id="lua">Lua</h3>
+<p>While extensive, Luarocks carries with it around 20 years of baggage,
+which makes it difficult to make suitable for modern Lua development, while
+retaining backward compatibility.</p>
+<p>With Lux, we’re pushing for a fresh start:</p>
+<ul>
+<li><strong>A notion of a project:</strong>
+<ul>
+<li>With TOML as the main manifest format, you can easily add, remove, pin
+and update dependencies using the CLI.</li>
+<li>If you’re in a project directory (with a <code>lux.toml</code>), commands like <code>build</code>
+will build your project, and install it into a project-local tree.</li>
+<li>Building will produce a lockfile of your project’s dependencies,
+allowing you to reproduce your exact dependencies on any compatible system.</li>
+</ul></li>
+<li><strong>Enforced SemVer:</strong>
+Luarocks allows for arbitrary versions after the patch version.
+For example, <code>1.0.1.0.0.0.2</code> is considered valid by Luarocks, but it has no
+useful meaning.
+Lux will parse this too, but will treat everything after the patch
+version as a prerelease version.
+We made this decision because we want to encourage package maintainers
+to stick to <a href="https://semver.org/">SemVer</a> for their releases.</li>
+<li><strong>Parallel builds:</strong>
+Inspired by the Nix store, Lux hashes<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a> install directories to prevent
+package conflicts and enable highly parallel builds without risking file system corruption.</li>
+</ul>
+<h3 id="neovim">Neovim</h3>
+<p>Thanks to our Neovim plugin manager, <a href="https://github.com/nvim-neorocks/rocks.nvim"><code>rocks.nvim</code></a>,
+and the later addition of Luarocks support to <a href="https://github.com/folke/lazy.nvim"><code>lazy.nvim</code></a>,
+Luarocks has been steadily gaining popularity in the Neovim space as a way of distributing
+plugins.
+But it’s been heavily held back by not being fully portable and by being unpredictable
+from system to system.
+Because Luarocks is written in Lua, installing a large number of packages
+and synchronising plugins with <code>rocks.nvim</code> has been painfully slow.</p>
+<p>With Lux, we hope that plugins will start treating themselves as Lua projects.
+Using Lux is non-destructive and doesn’t interfere with the current way of
+distributing Neovim plugins (which is via git).</p>
+<p>In fact, Lux has a <code>--nvim</code> flag, which tells it to install packages into a tree
+structure that is compatible with Neovim’s <a href="https://neovim.io/doc/user/repeat.html#packages"><code>:h packages</code></a>.</p>
+<h3 id="nix">Nix</h3>
+<p>If a Neovim plugin exists as a Luarocks package, <a href="https://github.com/NixOS/nixpkgs"><code>nixpkgs</code></a>
+will use it as the source of truth.
+This is mainly because with a proper package manager, the responsibility of declaring dependencies
+is the responsibility of the package author.
+However, Luarocks has very basic lockfile support, which does not include source hashes.
+While Luarocks (as does Lux) supports conflicting dependencies
+via its <a href="https://luarocks.org/modules/hisham/luarocks-loader"><code>luarocks.loader</code></a>,
+nixpkgs cannot reasonably add multiple versions of the same dependency to its package set.
+Lux’s <a href="https://github.com/nvim-neorocks/lux/blob/5d2bee87a99afb6e532421d381d1b4986b855d56/lux-lib/resources/test/sample-project-lockfile-missing-deps/lux.lock"><code>lux.lock</code></a>,
+stores source and rockspec hashes of each dependency.
+If the source URL is a git repository, lux will store a <a href="https://nix.dev/manual/nix/2.26/store/file-system-object/content-address#serial-nix-archive">NAR hash</a>.
+This means the a <code>lux.lock</code> can be used to create a <a href="https://bmcgee.ie/posts/2023/02/nix-what-are-fixed-output-derivations-and-why-use-them/"><code>fixed-output derivation</code></a>
+with all dependencies, just as you can do with a <code>Cargo.lock</code>.</p>
+<h2 id="next-steps">Next steps</h2>
+<p>Right now, our priorities are set on squashing bugs and improving error messages.
+Soon, we’ll be rewriting <code>rocks.nvim</code> to use Lux instead of Luarocks under the hood.
+This should let rocks.nvim catch up with other plugin managers in terms of speed
+and make it endlessly more stable than before.
+If the rewrite is successful, then that spells great news for the Neovim ecosystem
+going forward, as it means that Lux can be embedded in other places too
+(e.g. lazy.nvim, which has had troubles with luarocks in the past)!</p>
+<h2 id="documentation">Documentation</h2>
+<p>If you’d like to jump on the Lux train early, head over to <a href="https://nvim-neorocks.github.io/tutorial/getting-started">our documentation website</a>.
+A tutorial as well as guides can be found on there.</p>
+<p>If you have any questions or issues, feel free to reach out in <a href="https://github.com/nvim-neorocks/lux/discussions">the GitHub discussions</a>
+or <a href="https://github.com/nvim-neorocks/lux/issues">our issue tracker</a>. Cheers! :)</p>
+<p>The Lux Team</p>
+<h2 id="license">License</h2>
+<ul>
+<li>Lux is licensed under <a href="https://github.com/nvim-neorocks/lux/blob/master/LICENSE">LGPLv3.0+</a>.</li>
+<li>The Lux logo © 2025 by Kai Jakobi is licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a>.</li>
+</ul>
+<section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p>We still have things to flesh out, like MSVC support, error messages and edge cases,
+but all those fixes are planned for the 1.0 release.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>Lua 5.1, 5.2, 5.3. 5.4 and luajit.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>See <a href="https://nvim-neorocks.github.io/explanations/lux-package-conflicts">our guide</a>
+for details.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+    </section>
+</article>
+]]></description>
+    <pubDate>Mon, 07 Apr 2025 00:00:00 UT</pubDate>
+    <guid>mrcjkb.dev/posts/2025-04-07-lux-announcement.html</guid>
+    <dc:creator>Marc Jakobi</dc:creator>
+</item>
+<item>
+    <title>A modern approach to tree-sitter parsers in Neovim</title>
+    <link>mrcjkb.dev/posts/2024-07-28-tree-sitter.html</link>
+    <description><![CDATA[<article>
+    <section class="header">
+        Posted on July 28, 2024
+        
+    </section>
+    <section>
+        <p>One and a half years ago, I published <a href="https://mrcjkb.dev/posts/2023-01-10-luarocks-tag-release.html">a post</a>
+with a call to action to publish Neovim plugins to luarocks.
+Since then, a lot has happened.</p>
+<p>The <a href="https://github.com/nvim-neorocks">nvim-neorocks</a> organisation has grown
+and produced <a href="https://github.com/nvim-neorocks/rocks.nvim">rocks.nvim</a>, which pioneers
+luarocks support in Neovim, treating luarocks packages as first-class citizens.
+A lot of plugins are now available on luarocks.org, and publishing plugins that aren’t
+yet available <a href="https://github.com/nvim-neorocks/rocks.nvim/wiki/Plugin-support">has never been easier</a>.</p>
+<p>I’d like to take some time to provide an update on some recent developments…</p>
+<h2 id="the-path-to-nvim-treesitter-1.0">The path to nvim-treesitter 1.0</h2>
+<p>One of my favourite things about Neovim is how easy it is to do exceptionally cool things with
+<a href="https://tree-sitter.github.io/tree-sitter/">tree-sitter</a>.
+For those new to the concept, tree-sitter is a parsing library that can be used to provide
+fast and accurate syntax highlighting, code navigation, and much more.</p>
+<p>My <a href="https://github.com/mrcjkb/neotest-haskell">very first Neovim plugin</a> was
+a Haskell adapter for <a href="https://github.com/nvim-neotest/neotest">neotest</a>, which uses
+tree-sitter queries to interact with test suites within Neovim, providing diagnostics
+for tests, among other things.</p>
+<p>However, even though <a href="https://github.com/nvim-treesitter/nvim-treesitter">nvim-treesitter</a>
+has been around <a href="https://github.com/nvim-treesitter/nvim-treesitter/graphs/code-frequency">since early 2020</a>,
+as of writing this post, its readme still has the following notice:</p>
+<blockquote>
+<p><strong>Warning: Treesitter and nvim-treesitter highlighting are an experimental feature of Neovim.
+Please consider the experience with this plug-in as experimental until Tree-Sitter support in Neovim is stable!</strong></p>
+</blockquote>
+<h3 id="a-roadmap-to-stability">A roadmap to stability</h3>
+<p>Over the past year, development has accelerated, and there now exists
+<a href="https://github.com/nvim-treesitter/nvim-treesitter/issues/4767">a roadmap for a stable version 1.0</a>.</p>
+<p>The plugin is being rewritten<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> to completely drop the module framework.</p>
+<p>Instead, it will only manage parser and query installations.
+This means that when you install nvim-treesitter 1.0, you won’t have any queries on the runtimepath
+unless you install a matching parser.
+Many plugins that used to depend on the legacy module system are now standalone plugins,
+requiring only the parsers.</p>
+<h3 id="practical-example">Practical example</h3>
+<p>Typically, a plugin that depends on a tree-sitter parser will indicate its dependency on
+nvim-treesitter in its documentation.
+For instance, here are <a href="https://github.com/MeanderingProgrammer/markdown.nvim/tree/35f8bd24809e21219c66e2a58f1b9f5d547cc2c3?tab=readme-ov-file#lazynvim">the lazy.nvim install instructions</a>
+for markdown.nvim:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;MeanderingProgrammer/markdown.nvim&#39;</span><span class="op">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="va">main</span> <span class="op">=</span> <span class="st">&quot;render-markdown&quot;</span><span class="op">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="va">opts</span> <span class="op">=</span> <span class="op">{},</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="va">name</span> <span class="op">=</span> <span class="st">&#39;render-markdown&#39;</span><span class="op">,</span> <span class="co">-- Only needed if you have another plugin named markdown.nvim</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="va">dependencies</span> <span class="op">=</span> <span class="op">{</span> <span class="st">&#39;nvim-treesitter/nvim-treesitter&#39;</span><span class="op">,</span> <span class="st">&#39;nvim-tree/nvim-web-devicons&#39;</span> <span class="op">},</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>Interestingly, this plugin doesn’t actually depend on nvim-treesitter.
+Did you know that you don’t even need nvim-treesitter to install parsers?</p>
+<h2 id="a-quick-dive-into-tsinstall">A quick dive into <code>:TSInstall</code></h2>
+<p>Let’s take a look at how nvim-treesitter manages parsers and queries.
+On the <code>master</code> branch, which still has the legacy module system, queries for basic
+functionality, such as highlights (+ injections), folds, indents, are present on the runtimepath,
+in nvim-treesitter’s <code>queries/&lt;lang&gt;</code><a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> directory.</p>
+<p>As mentioned earlier, this will change with version 1.0 (and you can test-drive it today
+with Neovim nightly on the <code>main</code> branch).
+Queries will be in a <code>runtime/queries</code> directory, so they won’t be added to the runtimepath
+until you install the parser.
+The plugin locks compatible parser revisions in a <a href="https://github.com/nvim-treesitter/nvim-treesitter/blob/master/lockfile.json"><code>lockfile.json</code></a>.
+And the nvim-treesitter CI only updates a parser’s revision if the automated tests
+for the matching queries don’t break.
+This minimises the risk that queries stop working when you update nvim-treesitter and the
+installed parsers.
+Of course, the effectiveness for any given parser depends on how well its queries are tested.</p>
+<p>When installing a parser, nvim-treesitter delegates to <a href="https://github.com/tree-sitter/tree-sitter/blob/master/cli/README.md"><code>tree-sitter-cli</code></a>,
+which may in turn delegate to a C compiler.
+Some parsers need to be generated from a <code>grammar.js</code> file, which requires Node.js.</p>
+<p>With much of the heavy lifting having recently been moved from nvim-treesitter to
+<code>tree-sitter-cli</code>, installing parsers has become a lot less error-prone.</p>
+<p>However, setting up the correct toolchain <a href="https://github.com/nvim-treesitter/nvim-treesitter/wiki/Windows-support">can still be a PITA on some platforms</a>.</p>
+<p>And there’s one pain point that cannot be solved by keeping track of compatible parsers
+in a lockfile…</p>
+<h2 id="challenges-with-downstream-plugin-compatibility">Challenges with downstream plugin compatibility</h2>
+<p>In March 2024, the tree-sitter-haskell parser underwent a complete rewrite.
+This significant update brought many improvements
+but also broke compatibility with several downstream plugins, including:</p>
+<ul>
+<li><a href="https://github.com/nvim-treesitter/nvim-treesitter/pull/6580">nvim-treesitter</a></li>
+<li><a href="https://github.com/mrcjkb/neotest-haskell/pull/162">neotest-haskell</a></li>
+<li><a href="https://github.com/mrcjkb/haskell-snippets.nvim/pull/27">haskell-snippets.nvim</a></li>
+<li><a href="https://github.com/andymass/vim-matchup/pull/349">vim-matchup</a></li>
+<li><a href="https://github.com/mizlan/iswap.nvim/pull/89">iswap.nvim</a></li>
+<li><a href="https://gitlab.com/HiPhish/rainbow-delimiters.nvim/-/commit/a0e715996c93187290c00d494d58e11d5f5e43ad">rainbow-delimiters.nvim</a></li>
+<li><a href="https://github.com/kiyoon/haskell-scope-highlighting.nvim/pull/3">haskell-scope-highlighting.nvim</a></li>
+<li><a href="https://github.com/nvim-treesitter/nvim-treesitter-context/pull/447">nvim-treesitter-context</a></li>
+<li><a href="https://github.com/nvim-treesitter/nvim-treesitter-textobjects/pull/613">nvim-treesitter-textobjects</a></li>
+<li><a href="https://github.com/laytan/tailwind-sorter.nvim/pull/104">tailwind-sorter.nvim</a></li>
+</ul>
+<p>Synchronizing updates across all these plugins to ensure a seamless transition for users
+is nearly impossible, especially given the limited number of maintainers for these queries.</p>
+<h3 id="immediate-impact-on-users">Immediate impact on users</h3>
+<p>Until all downstream plugins have been updated, affected users are left with two primary options:</p>
+<ul>
+<li><strong>Pinning nvim-treesitter:</strong>
+Users can pin nvim-treesitter to a version or revision that installs the old version of the parser.
+Unfortunately, this workaround means they cannot benefit from any other parser updates or fixes.
+Consequently, users may have to pin plugins that depend on other parsers,
+delaying overall ecosystem improvements.</li>
+<li><strong>Disabling plugins:</strong>
+This approach ensures users can still receive updates for other parts of their setup
+but at the cost of losing functionality provided by the disabled plugins.</li>
+</ul>
+<p>Wouldn’t it be neat if you could pin parsers individually?</p>
+<h2 id="enter-rocks.nvim">Enter rocks.nvim</h2>
+<p>For a while, we (the nvim-neorocks team) have been using
+<a href="https://github.com/nvim-neorocks/nurr">the Neovim User Rock Repository (NURR)</a> to
+automatically package many Neovim plugins for <a href="https://luarocks.org">luarocks</a>,
+to be used with rocks.nvim.</p>
+<p>Aside from workflows that publish Neovim plugins, we’ve also added a workflow that
+publishes tree-sitter parsers, bundled with the matching nvim-treesitter queries, to luarocks.org.
+To top it off, our <a href="https://nvim-neorocks.github.io/rocks-binaries/">rocks-binaries</a>
+project periodically pre-builds the parsers on Linux, macOS (x86_64 + aarch64) and Windows,
+so that rocks.nvim users on those platforms don’t have to worry
+about installing any additional toolchains.</p>
+<p>Recently, we’ve started publishing the parsers to the root manifest with <code>0.0.x</code> versions<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>,
+where <code>x</code> increments every time the revision changes in the nvim-treesitter lockfile, or
+whenever the parser’s queries are modified<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a>.</p>
+<p>With luarocks packages as first-class citizens in Neovim,
+this allows plugin authors to add parsers as dependencies to their luarocks packages
+and has a neat side effect: rocks.nvim users can now pin each parser individually.</p>
+<p>Welcome to a new era of flexibility and stability!</p>
+<blockquote>
+<p><strong>IMPORTANT</strong></p>
+<p>If you use rocks.nvim and run into issues with tree-sitter parsers,
+please bug us, not the nvim-treesitter maintainers!
+We provide a <a href="https://github.com/nvim-neorocks/rocks-treesitter.nvim">rocks-treesitter.nvim</a>
+module for highlighting and auto-installing parsers, as well
+as a <a href="https://luarocks.org/modules/neorocks/nvim-treesitter-legacy-api">nvim-treesitter-legacy-api</a>
+rock that provides the module systems for plugins that still depend on it,
+without adding queries that could be out-of-sync with the luarocks parsers to the runtimepath.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note for plugin authors</strong></p>
+<p>While luarocks supports loading multiple versions
+of the same lua dependency, this does not translate
+to tree-sitter parsers.
+Neovim will use the first parser it finds on the runtimepath.
+For this reason, we currently don’t recommend that plugin authors
+pin parser dependencies. You should leave that up to your users for now.</p>
+</blockquote>
+<section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p>As of writing, the nvim-treesitter 1.0 roadmap is subject to change.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p><code>&lt;lang&gt;</code> is the name of the matching parser.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>We don’t know yet if/how nvim-treesitter will handle parser versioning if/when it
+goes stable. <code>0.0.x</code> seems like a safe bet.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p>Checked using the git log every 12 hours.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+    </section>
+</article>
+]]></description>
+    <pubDate>Sun, 28 Jul 2024 00:00:00 UT</pubDate>
+    <guid>mrcjkb.dev/posts/2024-07-28-tree-sitter.html</guid>
+    <dc:creator>Marc Jakobi</dc:creator>
+</item>
+<item>
+    <title>Rethinking the `setup` convention in Neovim. Is it time for a paradigm shift?</title>
+    <link>mrcjkb.dev/posts/2023-08-22-setup.html</link>
+    <description><![CDATA[<article>
+    <section class="header">
+        Posted on August 22, 2023
+        
+    </section>
+    <section>
+        <p>In the ever-evolving Neovim plugin ecosystem, the usage and appropriateness of a <code>setup</code> function
+for initializing plugins has become somewhat a hot topic.
+This discussion has sparked differing opinions among plugin developers.</p>
+<p>Like some other plugin authors, I’ve recently found myself reverting back to the more traditional
+Vim convention of employing <code>vim.g.&lt;namespaced_table&gt;</code> or <code>vim.g.&lt;namespaced_option&gt;</code>
+for configuration, and leaning on the inherent mechanisms of Neovim for initialization.</p>
+<p>In this post, I aim to unpack my perspective on this debate,
+considering both the present landscape and the potential trajectory of the Neovim plugin ecosystem.</p>
+<h2 id="drawing-parallels-the-design-journey-of-my-first-neovim-plugin">Drawing parallels: The design journey of my first Neovim plugin</h2>
+<p>While <a href="https://github.com/mrcjkb/haskell-tools.nvim/"><code>haskell-tools.nvim</code></a> wasn’t technically my first
+Neovim plugin, it holds the distinction of being the first that wasn’t merely an adapter or extension
+for another.
+If the name resonates with you, it’s likely because I drew inspiration from the popular
+<a href="https://github.com/simrat39/rust-tools.nvim"><code>rust-tools.nvim</code></a>.
+Both plugins, though tailored for different programming languages, share a parallel purpose.</p>
+<p><code>rust-tools</code>, for historical reasons, depends on <code>nvim-lspconfig</code>.
+It relies on a <code>setup</code> function to kickstart the <code>lspconfig.rust_analyzer.setup</code>, among other things.
+As I was relatively new to Lua and Neovim plugin development, this structure felt like a logical
+blueprint for <code>haskell-tools</code>.
+Which led to <a href="https://github.com/mrcjkb/haskell-tools.nvim/blob/3ac5c19a0742cc80c65bab9525ac3e7a9c54ab93/lua/haskell-tools/init.lua">this module</a>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">local</span> <span class="cn">M</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="va">config</span> <span class="op">=</span> <span class="kw">nil</span><span class="op">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="va">lsp</span> <span class="op">=</span> <span class="kw">nil</span><span class="op">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="va">hoogle</span> <span class="op">=</span> <span class="kw">nil</span><span class="op">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="va">repl</span> <span class="op">=</span> <span class="kw">nil</span><span class="op">,</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="cn">M</span><span class="op">.</span>setup<span class="op">(</span><span class="va">opts</span><span class="op">)</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- initialization omitted for brevity</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> <span class="cn">M</span></span></code></pre></div>
+<p>As a Haskell developer, seeing state - initialized with <code>nil</code> - was profoundly unsettling.
+Despite my reservations, the <code>setup</code> paradigm was omnipresent in most Lua plugins I was using.
+So I decided to go along with it. This, as <a href="https://gitlab.com/HiPhish/rainbow-delimiters.nvim/-/blob/7506a7d6/doc/rainbow-delimiters.txt?ref_type=heads#L150"><strong><span class="citation" data-cites="HiPhish">@HiPhish</span></strong> puts it very well</a>,
+was <a href="http://www.jargon.net/jargonfile/c/cargocultprogramming.html">cargo cult programming</a>.</p>
+<h2 id="tracing-the-origins-of-setup">Tracing the origins of <code>setup</code></h2>
+<p>Neovim embraced Lua as a first-class citizen <a href="https://neovim.io/news/2021/07">with version <code>0.5</code></a>.
+Though the initial API wasn’t as powerful as the one we enjoy today,
+it marked the onset of an explosive growth in Lua plugins.
+However, the roots of the <code>setup</code> pattern trace back even earlier. Neovim contributor <a href="https://github.com/norcalli/neovim-plugin"><strong><span class="citation" data-cites="norcalli">@norcalli</span></strong>
+introduced a library designed “to standardize the creation of Lua based plugins in Neovim.”</a>,
+almost a year before Lua’s elevated status<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>.</p>
+<p>From this effort, <code>setup</code> was born:</p>
+<blockquote>
+<ul>
+<li>Plugins shouldn’t use the api unless the user explicitly asks them to by calling a function.
+<ul>
+<li>For one time initialization for a plugin, this is achieved by having a <code>setup()</code> function
+which will do any initialization required unrelated to key mappings, commands, and events.</li>
+<li>Every other call should be encapsulated by functions exported by the plugin.</li>
+</ul></li>
+</ul>
+</blockquote>
+<p>Observant readers may notice a subtle difference between the foundational approach and the
+conventions that are prevalent today.
+In <strong><span class="citation" data-cites="norcalli">@norcalli</span></strong>’s blueprint, <a href="https://github.com/norcalli/neovim-plugin/blob/master/examples/test.lua">configuration and initialization were decoupled</a>,
+with an <code>export</code> function designated for configuration and <code>setup</code> exclusively managing initialization.
+In contrast, many of today’s plugins meld these two by passing a configuration table directly to <code>setup</code>.
+We will revisit this later on…</p>
+<h2 id="neovim-0.7---lua-everywhere">Neovim 0.7 - Lua everywhere!</h2>
+<p>Remember, this <code>setup</code> concept originated before Lua’s deep integration in Neovim.
+Well before <code>init.lua</code> and auto-loading Lua files on the <a href="https://neovim.io/doc/user/options.html#" title="runtimepath"><code>runtimepath</code></a>
+arrived with <a href="https://neovim.io/news/2022/04">version 0.7</a>.
+This version brought with it many improvements to the Lua API.
+And it was a few months after the release of Neovim 0.7 that <a href="https://zignar.net/2022/11/06/structuring-neovim-lua-plugins/#require-performance"><strong><span class="citation" data-cites="mfussenegger">@mfussenegger</span></strong> posted
+an article</a>
+which made me realise I had stuctured my <code>haskell-tools</code> plugin wrong.</p>
+<p>His article (which I strongly recommend reading) differentiates between global and filetype-specific plugins.
+For Lua plugins, he presents some advantages and disadvantages of various structuring approaches
+and two configuration methods:</p>
+<ul>
+<li>A <code>setup</code> function, which is “useful if the plugin performs expensive initialization or if
+what it initializes depends on the configuration”, but forces users to <code>require</code> the plugin,
+which may impact startup if not managed properly.</li>
+<li>A single global configuration table, like <code>vim.g.foobar_settings</code>, which omits the
+need for a <code>require</code>, and provides direct access across multiple modules, but may be harder to
+validate.</li>
+</ul>
+<h2 id="haskell-tools-redesigned"><code>haskell-tools</code> redesigned</h2>
+<p>Continuing the trajectory of Neovim 0.7’s advancements, <a href="https://neovim.io/news/2022/04#filetypelua"><code>filetype.lua</code></a>,
+emerged as a notable (experimental) addition. By the time Neovim 0.9 rolled around,
+it had effectively replaced the older <code>filetype.vim</code>.
+Initially, <code>haskell-tools.setup</code> employed autocommands for Haskell and Cabal files.
+This approach could bog down startup times, especially if multiple plugins adopted it.
+Addressing this, I rolled out the <code>start_or_attach</code> function for more efficient initialization,
+tailored for lazy invocation within users’ <code>after/ftplugin/&lt;haskell|cabal&gt;.lua</code> scripts.
+This shift also severed the plugin’s tie to <code>nvim-lspconfig</code> for LSP tasks.
+But, in a nod to <a href="https://www.snoyman.com/blog/2018/04/stop-breaking-compatibility/">backward compatibility</a>,
+the original <code>setup</code> function remained, bringing along its inherent codebase intricacies.</p>
+<p>After recent consideration, I have finally decided to release version 2 of <code>haskell-tools.nvim</code>.</p>
+<h2 id="the-pitfalls-of-setup">The pitfalls of <code>setup</code></h2>
+<p><span class="citation" data-cites="mfussenegger">@mfussenegger</span> clarifies in his article that he does not advocate against a <code>setup</code> function.
+While I think his article is a great read, I have personally come to the conclusion that
+<code>setup</code> as we know it must burn. Here’s why…</p>
+<p><img src="https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/fd85e99a-4dac-4f3d-88f7-83f6246a1a62" width="550" /></p>
+<h3 id="a-false-sense-of-consistency">A false sense of “consistency”</h3>
+<p>The most common argument I hear in favour of defaulting to <code>setup</code> is “consistency”. In fact,
+today’s most popular Lua plugin manager, <a href="https://github.com/folke/lazy.nvim#-plugin-spec"><code>lazy.nvim</code>, defaults to
+calling <code>require(MAIN).setup(opts)</code></a>
+in the absence of a <code>config</code> option.
+But as we’ve delved into before, the term “setup” is used ambiguously across plugins.
+For instance, while plugins like <code>nvim-treesitter</code> and <code>telescope.nvim</code> lean on Neovim’s inherent
+initialization and employ <code>setup</code> solely for configuration,
+others like <code>nvim-cmp</code> and <code>nvim-lspconfig</code> use the same term for both roles.
+This facade of uniform naming masks its varied functionalities, leading to false consistency.</p>
+<p>Furthermore, global configuration variables or tables, prefixed with a namespace specific to the plugin,
+are both consistent and compatible with Vimscript<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>.</p>
+<p><img src="https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/2de0fa4f-adec-45c9-862d-78756c444bae" width="550" /></p>
+<h3 id="the-mirage-of-setup-driven-expectations">The mirage of <code>setup</code>-driven expectations</h3>
+<p>The <code>setup</code> convention in Neovim plugins has inadvertently set certain expectations among users.
+A notable interaction I had with a user when I decided to remove it from <code>haskell-tools.nvim</code> showcased this:
+the absence of a familiar <code>setup</code> function made the configuration feel “strange” and “out of place” to them.
+Further, they worried it would prevent them from conditionally loading or initializing the plugin.</p>
+<p>This sentiment points to a broader issue.
+The prevalent use of the <code>setup</code> function has conditioned users to expect it as a standard
+for configuring and initializing plugins.
+This expectation can overshadow alternative, and sometimes more flexible, configuration methods.</p>
+<p>Neovim itself offers <a href="https://neovim.io/doc/user/repeat.html#packages">built-in mechanisms for conditional plugin loading</a>,
+and many plugin managers support similar functionalities.
+However, the ubiquity of the <code>setup</code> convention might be inadvertently limiting our view and adaptability,
+leading us to perceive deviations as anomalies, even when they may offer superior flexibility.</p>
+<h3 id="require-ing-plugins-at-startup-can-break-your-config"><code>require</code>-ing plugins at startup can break your config</h3>
+<p>To create robust plugins, it’s imperative to differentiate between configuration and initialization.
+This becomes particularly crucial when plugins have interdependencies.
+Careless <code>require</code> calls during the configuration phase can induce unexpected hiccups,
+primarily influenced by the order of initialization.
+The best practice? Make such calls deferred or lazy.</p>
+<p>Let’s illustrate with an example:</p>
+<h4 id="not-ideal">Not ideal</h4>
+<div class="sourceCode" id="cb2"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- May fail if foo is not initialized</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">-- before lspconfig</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">local</span> <span class="va">bar</span> <span class="op">=</span> <span class="fu">require</span><span class="op">(</span><span class="st">&#39;foo&#39;</span><span class="op">).</span><span class="va">bar</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">require</span><span class="op">(</span><span class="st">&#39;lspconfig&#39;</span><span class="op">).</span><span class="va">clangd</span><span class="op">.</span>setup <span class="op">{</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="va">on_attach</span> <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="cn">_</span><span class="op">)</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="va">bar</span><span class="op">.</span>do_something<span class="op">()</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">end</span><span class="op">,</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h4 id="better">Better</h4>
+<div class="sourceCode" id="cb3"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">require</span><span class="op">(</span><span class="st">&#39;lspconfig&#39;</span><span class="op">).</span><span class="va">clangd</span><span class="op">.</span>setup <span class="op">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="va">on_attach</span> <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="cn">_</span><span class="op">)</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- Will fail only if foo is never initialized</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">require</span><span class="op">(</span><span class="st">&#39;foo&#39;</span><span class="op">).</span><span class="va">bar</span><span class="op">.</span>do_something<span class="op">()</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">end</span><span class="op">,</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>Now, imagine a scenario where <code>nvim-lspconfig</code> isn’t even present or loaded
+(e.g. when using a single configuration on multiple devices with different
+sets of plugins).
+Neovim’s startup would choke on <code>require('lspconfig')</code>,
+halting further configurations even if the plugin isn’t immediately required.</p>
+<p>However, if <code>nvim-lspconfig</code> leveraged <code>filetype.lua</code> and <code>vim.g</code>, things would look different:</p>
+<ul>
+<li>Configuration snippet:</li>
+</ul>
+<div class="sourceCode" id="cb4"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="va">vim</span><span class="op">.</span><span class="va">g</span><span class="op">.</span><span class="va">lspconfig</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="va">clangd</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="va">filetypes</span> <span class="op">=</span> <span class="op">{</span><span class="st">&#39;c&#39;</span><span class="op">,</span> <span class="st">&#39;cpp&#39;</span><span class="op">},</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- additional settings...</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<ul>
+<li>The initialization script (orchestrated by the plugin, not the user):</li>
+</ul>
+<div class="sourceCode" id="cb5"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- ftplugin/c.lua</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="kw">local</span> <span class="va">clangd</span> <span class="op">=</span> <span class="va">vim</span><span class="op">.</span><span class="va">g</span><span class="op">.</span><span class="va">lspconfig</span> <span class="kw">and</span> <span class="va">vim</span><span class="op">.</span><span class="va">g</span><span class="op">.</span><span class="va">lspconfig</span><span class="op">.</span><span class="va">clangd</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="va">clangd</span><span class="op">.</span><span class="va">filetypes</span> <span class="kw">and</span> <span class="va">vim</span><span class="op">.</span>tbl_contains<span class="op">(</span><span class="va">clangd</span><span class="op">.</span><span class="va">filetypes</span><span class="op">,</span> <span class="st">&#39;c&#39;</span><span class="op">)</span> <span class="cf">then</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- config validations and clangd initialization performed and cached in &#39;lspconfig.cache.clangd&#39;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">require</span><span class="op">(</span><span class="st">&#39;lspconfig.cache.clangd&#39;</span><span class="op">)</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">require</span><span class="op">(</span><span class="st">&#39;lspconfig.configs&#39;</span><span class="op">).</span><span class="va">clangd</span><span class="op">.</span>launch<span class="op">()</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="cf">end</span></span></code></pre></div>
+<p>In such a setup, Neovim doesn’t break a sweat,
+even if <code>nvim-lspconfig</code> remains unloaded when <code>init.lua</code> processes <code>vim.g.lspconfig.clangd</code>.</p>
+<h3 id="automatic-dependency-managements-achilles-heel">Automatic dependency management’s Achilles’ Heel</h3>
+<p>Efforts to resolve <a href="https://mrcjkb.dev/posts/2023-01-10-luarocks-tag-release.html">pain points</a>
+in Neovim’s plugin ecosystem have gravitated towards automatic dependency management.</p>
+<p>Two notable initiatives<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a> are:</p>
+<ul>
+<li><a href="https://luarocks.org/labels/neovim">Hosting plugins on LuaRocks.org</a>
+and <a href="https://github.com/ntbbloodbath/rocks.nvim">installing them with <code>luarocks</code></a>.</li>
+<li><a href="https://packspec.org/spec.html">The <code>pkg.json</code> (<code>packspec</code>) format specification</a>
+for plugin metadata and dependencies.</li>
+</ul>
+<p>Given Vim’s architecture (and by extension Neovim’s), there’s a specific <a href="https://neovim.io/doc/user/starting.html#initialization">initialization order</a>
+where user preferences load before plugins. Ring a bell?</p>
+<p>A lurking issue arises when plugins blend their configuration and initialization phases in one
+<code>setup</code> function.
+By doing this and handing over the initialization reins to the user,
+the core advantages of automatic dependency management risk getting undermined.</p>
+<p><img src="https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/898f9b14-9608-4314-a671-62d81008473b" width="500" /></p>
+<p>It should be a plugin’s duty to articulate its dependencies rather than leaving it to users or plugin managers.
+In the same spirit, plugins should defer their own initialization until all their dependencies are up and running.</p>
+<p>Take a look at <a href="https://github.com/folke/neodev.nvim/tree/v2.5.2#-setup">this snippet from <code>neodev.nvim</code>’s</a><a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a> README:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- IMPORTANT: make sure to setup neodev BEFORE lspconfig</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">require</span><span class="op">(</span><span class="st">&quot;neodev&quot;</span><span class="op">).</span>setup<span class="op">({</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- add any options here, or leave empty to use the default settings</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="op">})</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co">-- then setup your lsp server as usual</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="kw">local</span> <span class="va">lspconfig</span> <span class="op">=</span> <span class="fu">require</span><span class="op">(</span><span class="st">&#39;lspconfig&#39;</span><span class="op">)</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="co">-- example to setup lua_ls and enable call snippets</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="va">lspconfig</span><span class="op">.</span><span class="va">lua_ls</span><span class="op">.</span>setup<span class="op">({</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  <span class="va">settings</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    <span class="va">Lua</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>      <span class="va">completion</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">callSnippet</span> <span class="op">=</span> <span class="st">&quot;Replace&quot;</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>      <span class="op">}</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="op">})</span></span></code></pre></div>
+<p>Highlighting this, had there been a distinct line between configuration and initialization responsibilities,
+warnings like these wouldn’t be necessary.</p>
+<h3 id="safeguarding-initialization-in-dynamic-environments">Safeguarding initialization in dynamic environments</h3>
+<p>If you’re like me, and <a href="https://mrcjkb.dev/posts/2023-08-17-lua-adts.html">rely heavily on static type checking</a>
+to fortify your code base, you’ll appreciate the confidence in not worrying about whether parts of your plugin
+are properly initialized.</p>
+<p>Recall how I hinted at the beginning of this post that <code>nil</code> is evil?
+Consider this example from <a href="https://github.com/gbprod/yanky.nvim">a plugin I use</a>,
+which features a <a href="https://github.com/nvim-telescope/telescope.nvim/wiki/Extensions"><code>telescope.nvim</code> extension</a>.
+From a configuration standpoint, the typical way to add a Telescope extension looks something like this:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">require</span><span class="op">(</span><span class="st">&#39;telescope&#39;</span><span class="op">).</span>load_extension<span class="op">(</span><span class="st">&#39;yank_history&#39;</span><span class="op">)</span></span></code></pre></div>
+<p>Now, this is what happens if a user tries to invoke <code>:Telescope yank_history</code> before calling <code>require('yanky').setup()</code>:</p>
+<p><img src="https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/d8d32e26-a6a6-48f5-b8ba-d3ed0c5707c9" width="550" /></p>
+<p>If <code>setup</code> has side-effects, it puts plugin authors in a tricky spot: They cannot confidently delegate
+control to users and simultaneously ensure that every component initializes when needed.</p>
+<p>This issue illustrates a broader challenge: without type safety or strict initialization processes,
+we run into unpredictable behaviors. While dynamic languages like Lua offer flexibility,
+they also introduce the potential for such oversights, especially when initialization processes
+are handed over to the end-users.</p>
+<h3 id="what-about-namespace-clashes-and-clutter">What about namespace clashes and clutter?</h3>
+<p>The traditional way in Vimscript was to have a <code>vim.g.&lt;some_option&gt;</code> for each configuration option,
+typically prefixed with the plugin name, to avoid namespace clashes.
+This can introduce a lot of clutter. Fortunately, in Lua, <code>vim.g.foo_bar</code> can also be a single table (or a function that returns a table),
+which is no more likely to clash than a module name.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Instead of:</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="va">vim</span><span class="op">.</span><span class="va">g</span><span class="op">.</span><span class="va">plugin_name_option1</span> <span class="op">=</span> <span class="st">&quot;value1&quot;</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="va">vim</span><span class="op">.</span><span class="va">g</span><span class="op">.</span><span class="va">plugin_name_option2</span> <span class="op">=</span> <span class="st">&quot;value2&quot;</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="va">vim</span><span class="op">.</span><span class="va">g</span><span class="op">.</span><span class="va">plugin_name_option3</span> <span class="op">=</span> <span class="st">&quot;value3&quot;</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="co">-- We can have:</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="va">vim</span><span class="op">.</span><span class="va">g</span><span class="op">.</span><span class="va">plugin_name</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="va">option1</span> <span class="op">=</span> <span class="st">&quot;value1&quot;</span><span class="op">,</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="va">option2</span> <span class="op">=</span> <span class="st">&quot;value2&quot;</span><span class="op">,</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="va">option3</span> <span class="op">=</span> <span class="st">&quot;value3&quot;</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>This approach keeps the global namespace clean and reduces the chances of clashes.</p>
+<h3 id="what-about-a-configure-function">What about a <code>configure</code> function?</h3>
+<p>While there’s no inherent issue with a <code>configure</code> function (or even a <code>setup</code> function solely
+dedicated to configuration), its use can indeed simplify the validation of user configurations.</p>
+<p>So, why do I caution against its adoption?</p>
+<p>Remember the evolution of <span class="citation" data-cites="norcalli">@norcalli</span>’s <code>export</code>/<code>setup</code> pattern into a unified function?
+The crux of the matter lies in the fact that Lua functions can be inherently impure.
+This means there’s nothing stopping plugin developers from crafting their <code>configure</code> functions
+in less than ideal ways, such as:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="cn">M</span><span class="op">.</span>configure<span class="op">(</span><span class="va">opts</span><span class="op">)</span> <span class="op">=</span> <span class="kw">function</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- &lt;do something with opts&gt;</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="va">vim</span><span class="op">.</span><span class="va">api</span><span class="op">.</span>nvim_launch_nuclear_warhead<span class="op">()</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
+<p>On the other hand, employing a <code>vim.g</code> variable offers an implicit assurance of its singular role
+in configuration.
+While this might introduce complexity in validating configurations, Neovim offers a robust solution:
+the <a href="https://neovim.io/doc/user/pi_health.html#health-dev"><code>:checkhealth</code></a> mechanism.
+For an illustration of its effective utilization, <a href="https://github.com/mrcjkb/haskell-tools.nvim/blob/2e06bf7fb458356913f1fc7961f1d3c21c7163a1/lua/haskell-tools/health.lua#L225">see this example</a>
+from my <code>haskell-tools.nvim</code> plugin.</p>
+<h3 id="but-global-variables-are-an-antipattern">But… Global variables are an antipattern?</h3>
+<p>Yes and no. Using global <strong>mutable</strong> state is frowned upon as an antipattern.
+However, we are discussing global <em>configuration tables which we only read from</em>.
+It’s common knowledge among developers, even those with little experience, that mutating global variables is a bad idea.
+Yet, it’s surprising how many seasoned developers overlook the importance of isolating side-effects.</p>
+<h2 id="enter-a-world-without-setup">Enter a world without <code>setup</code></h2>
+<p>In light of these considerations, it is increasingly clear that the Neovim community may benefit
+from moving beyond the <code>setup</code> function, or at least the way it’s been traditionally employed.
+The <code>setup</code> function, as it stands today, isn’t the villain.
+However, the consequences of its misuse, ambiguity, and lack of clear separation of concerns in
+many plugins are real issues that need addressing.</p>
+<h3 id="so-what-should-the-ideal-look-like">So, what should the ideal look like?</h3>
+<ol type="1">
+<li><p><strong>Decoupled Configuration and Initialization</strong>:
+This has been reiterated multiple times,
+but it’s worth emphasizing. Configuration should be separated from initialization.
+This ensures that configuration is pure, readable, and unlikely to produce unexpected side effects.</p></li>
+<li><p><strong>Utilize <code>vim.g</code> for Configuration</strong>:
+As has been demonstrated, <code>vim.g</code> provides an ideal means to store plugin configuration.
+It aligns well with Vim conventions, provides an implicit assurance of its configuration-only role,
+and circumvents the need to <code>require</code> the plugin at startup.</p></li>
+<li><p><strong>Smart Initialization</strong>:
+Instead of relying on users or external mechanisms for activation,
+tools should employ intelligent self-initialization.
+For example, leveraging constructs like <code>filetype.lua</code> can defer their loading until genuinely required.
+However, for plugins with minimal startup footprints, lazy loading might be excessive.
+For plugins like <code>telescope.nvim</code> and <code>nvim-cmp</code> that support extensions, it would be nifty if
+Neovim provided a specification akin to <code>:h runtimepath</code>, so that extensions could register
+themselves automatically.
+Something along the lines of <code>extension/&lt;plugin&gt;/register.lua</code><a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a>, which plugins could source
+at runtime.</p></li>
+<li><p><strong>Explicit Dependency Declaration</strong>:
+Plugins should clearly specify any dependencies,
+and the initialization of such plugins should ensure that these dependencies are loaded before proceeding.</p></li>
+</ol>
+<h3 id="some-caveats">Some caveats</h3>
+<p>No approach is without its drawbacks. Some possible criticisms of moving away from <code>setup</code> are:</p>
+<ul>
+<li><p><strong>Learning Curve</strong>:
+This change would introduce a learning curve,
+especially for newer users who are already accustomed to the <code>setup</code> pattern.
+On the other hand, this approach discourages cargo cult programming and promotes genuine understanding.</p></li>
+<li><p><strong>Migration</strong>:
+Existing plugins that heavily rely on the <code>setup</code> pattern might need significant rewrites.
+While this is an investment in future robustness, it might be daunting for some plugin authors
+and users alike.</p></li>
+<li><p><strong>Performance</strong>:
+While unlikely, there’s always the potential for performance implications when making a sweeping change.
+However, any such implications would likely be minimal and far outweighed by the benefits.</p></li>
+<li><p><strong><code>vim.g</code> is a Vimscript/Lua bridge</strong>:
+As such, it may not be suitable for all use cases. For example, <a href="https://github.com/neovim/neovim/issues/12544#issuecomment-1116794687">metatables are erased</a><a href="#fn6" class="footnote-ref" id="fnref6" role="doc-noteref"><sup>6</sup></a>.
+Although I consider metatables excessive for plugin configuration, a dedicated Lua API might
+be needed to address such concerns.</p></li>
+</ul>
+<h3 id="update-change-isnt-chaos">[Update] Change isn’t chaos</h3>
+<p>Addressing reservations some readers have about embracing change; to draw an analogy:</p>
+<p>Just as transitioning away from fossil fuels doesn’t plunge us into perpetual darkness,
+or shifting to a more sustainable diet doesn’t lead to a world overrun by unchecked animal populations,
+the Neovim community won’t descend into chaos if we reconsider the use of <code>setup</code>.
+Change can be daunting, but it’s also a path to improvement.</p>
+<h3 id="update-some-additional-points-by-hiphish">[Update] Some additional points by <span class="citation" data-cites="HiPhish">@HiPhish</span></h3>
+<ul>
+<li><code>setup</code> locks users into Lua. Some people prefer Vimscript for configuration.</li>
+<li>Many <code>setup</code> functions do too much.
+There’s no need for inconsistent custom DSLs when Neovim already
+provides better mechanisms
+(like <a href="https://neovim.io/doc/user/usr_41.html#using-%3CPlug%3E"><code>&lt;Plug&gt;</code></a> for keymaps).</li>
+<li>A Lua function for configuration forces it all into one place.
+Maybe I want separate files for all my mappings and
+for all my custom highlight groups.</li>
+</ul>
+<h3 id="guided-migration-a-step-by-step-plan">Guided migration: A step-by-step plan</h3>
+<p>For plugin maintainers, especially those with a large user base,
+the thought of introducing breaking changes can be daunting.
+However, with a structured approach, you can ensure a smooth transition for both you and your users.
+Here’s a suggested plan to phase out the <code>setup</code> function:</p>
+<ol type="1">
+<li><p><strong>Embrace a Rigorous Release Cycle</strong>:
+Start by tagging releases with <a href="https://semver.org/">semantic versions</a> and/or maintaining a stable
+branch if you haven’t already. This provides a clear framework for introducing changes.</p></li>
+<li><p><strong>Prioritize Separation of Concerns</strong>:
+If your plugin conflates configuration and initialization in a single function,
+consider splitting these concerns.
+Initially, transition to a <code>setup</code> function dedicated only to configuration while optimizing initialization.
+This change is unlikely to disrupt most users.</p></li>
+<li><p><strong>Support Both APIs Temporarily</strong>:
+By concurrently supporting both the old and new APIs, you provide users with a transition period.
+Consider implementing prompts (with an option to disable them) to guide users towards the new method.</p></li>
+<li><p><strong>Introduce the New API in a Separate Branch</strong>:
+Create a branch that omits the <code>setup</code> function, and actively promote this to your users.
+Encourage them to switch and provide feedback.</p></li>
+</ol>
+<h2 id="in-conclusion">In Conclusion</h2>
+<p>In the constantly evolving world of Neovim plugins, it’s important to reflect on established patterns
+and consider their effectiveness. The <code>setup</code> pattern, while helpful in certain contexts,
+has shown potential pitfalls.</p>
+<p>By championing a clear division between configuration and initialization and embracing tools like <code>vim.g</code> for the former,
+we pave the way for a more robust, predictable, and user-friendly Neovim plugin ecosystem.</p>
+<p>As developers and users of Neovim plugins, it’s up to us to guide this evolution in a direction that
+benefits the entire community. Let’s strive for clarity, simplicity, and robustness as we move forward!</p>
+<h2 id="credits">Credits</h2>
+<p>Thanks to the <a href="https://github.com/nvim-neorocks">neorocks</a> surgeons for proof-reading and input:</p>
+<ul>
+<li><a href="https://github.com/teto"><strong><span class="citation" data-cites="teto">@teto</span></strong></a></li>
+<li><a href="https://github.com/vhyrro"><strong><span class="citation" data-cites="vhyrro">@vhyrro</span></strong></a></li>
+<li><a href="https://github.com/NTBBloodbath"><strong><span class="citation" data-cites="NTBBloodbath">@NTBBloodbath</span></strong></a></li>
+<li><a href="https://github.com/vigoux"><strong><span class="citation" data-cites="vigoux">@vigoux</span></strong></a></li>
+<li><a href="https://github.com/vsedov"><strong><span class="citation" data-cites="vsedov">@vsedov</span></strong></a></li>
+</ul>
+<section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p>The credit for tracing the origins of <code>setup</code> goes to <a href="https://github.com/RRethy/vim-illuminate/issues/112#issuecomment-1221213332"><strong><span class="citation" data-cites="RRethy">@RRethy</span></strong></a>.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>Some Neovim users find Vimscript more ergonomic for configuration than Lua.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>Notably, these work in progress approaches <a href="https://github.com/nvim-neorocks/luarocks-tag-release/discussions/73#discussioncomment-6552899">are not mutually exclusive</a>.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p>For the record, I’m quite a fan of this plugin.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn5"><p>This is analogous to <code>queries/&lt;language&gt;/&lt;query-file&gt;.scm</code>.<a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn6"><p>Thanks to <a href="https://github.com/echasnovski/"><strong><span class="citation" data-cites="echanovski">@echanovski</span></strong></a> for pointing this out to me.<a href="#fnref6" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+    </section>
+</article>
+]]></description>
+    <pubDate>Tue, 22 Aug 2023 00:00:00 UT</pubDate>
+    <guid>mrcjkb.dev/posts/2023-08-22-setup.html</guid>
+    <dc:creator>Marc Jakobi</dc:creator>
+</item>
+<item>
+    <title>Algebraic data types in Lua (Almost)</title>
+    <link>mrcjkb.dev/posts/2023-08-17-lua-adts.html</link>
+    <description><![CDATA[<article>
+    <section class="header">
+        Posted on August 17, 2023
+        
+    </section>
+    <section>
+        <p>Lua, in the realm of Neovim, is a curious companion.
+For personal configuration tweaks, it’s incredibly responsive, giving me immediate feedback.
+Moreover, when I’m uncertain about an idea’s potential,
+Lua offers a forgiving platform for prototyping without commitment.</p>
+<p>Yet, as the maintainer of a few plugins, who otherwise works with Haskell professionally,
+I have mixed feelings. Its dynamic typing casts shadows of unpredictability,
+making Neovim plugins susceptible to unexpected bugs at the wrong time.</p>
+<p><img src="https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/889a75bd-d63d-490f-bcf6-2e6e3b9d9b05" width="300" /></p>
+<p>When it comes to Neovim plugin (and Lua) development, the right tools can be game-changers.
+I’m aware of typed languages that compile to Lua, but here’s a native approach.
+Here, I’ll delve into my experiences in leveraging <a href="https://github.com/LuaLS/lua-language-server"><code>lua-language-server</code></a>
+and its support for <a href="https://github.com/LuaLS/lua-language-server/wiki/Annotations">type annotations</a>,
+demonstrating how they can elevate the robustness and expressiveness of your Lua code.</p>
+<p>As an example, we will be attempting to define an algebraic data type (ADT),
+and using <code>lua-language-server</code> for static type checking.</p>
+<h2 id="what-are-algebraic-data-types-adts">What are algebraic data types (ADT)s?</h2>
+<p>For those steeped in the world of functional languages like Haskell, F#, or OCaml,
+the term ADT might sound familiar. If that’s you, feel free to skip ahead.</p>
+<p>But if ADTs sound Greek to you, a straightforward analogy would be <a href="https://doc.rust-lang.org/rust-by-example/custom_types/enum.html">Rust Enums</a>,
+which are, in fact, ADTs. They’re powerful constructs allowing versatile and type-safe data modeling.</p>
+<p>I want to keep this post short, so I will assume this is enough information
+for you to know all the niceties that come with ADTs.</p>
+<p>For a deeper dive, there’s a vast sea of resources available for you to explore.</p>
+<h2 id="lua-type-annotations---the-basics">Lua type annotations - the basics</h2>
+<p>As mentioned previously, <code>lua-language-server</code> is capable of
+producing diagnostics based on <a href="https://github.com/LuaLS/lua-language-server/wiki/Annotations">type annotations</a>.</p>
+<p>Here’s a basic example of defining a data type with a <code>table</code>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@class</span><span class="co"> Foo</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@field</span><span class="co"> bar string</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@type</span><span class="co"> Foo</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="va">x</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="va">bar</span> <span class="op">=</span> <span class="st">&quot;hello&quot;</span><span class="op">,</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>And now the magic:
+Witness how <code>lua-language-server</code> utilizes these annotations to pinpoint type errors within Neovim:</p>
+<figure>
+<img src="https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/69c884d9-812b-414e-9b95-a83527fcd757" width="550" alt="lua-ls-example" />
+<figcaption aria-hidden="true">lua-ls-example</figcaption>
+</figure>
+<h2 id="dynamic-type-annotations">Dynamic type annotations</h2>
+<p>In Lua, we’re not restricted to a single type.
+With annotations and runtime checks, we can express flexibility in our type expectations.
+For instance, consider a function that can accept either an instance of <code>Foo</code> or a <code>string</code>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@param</span><span class="co"> </span><span class="cv">foo</span><span class="co"> Foo|string</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">local</span> <span class="kw">function</span> print_foo<span class="op">(</span><span class="va">foo</span><span class="op">)</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="fu">type</span><span class="op">(</span><span class="va">foo</span><span class="op">)</span> <span class="op">==</span> <span class="st">&#39;string&#39;</span> <span class="cf">then</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">print</span><span class="op">(</span><span class="va">foo</span><span class="op">)</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">else</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">print</span><span class="op">(</span><span class="va">foo</span><span class="op">.</span><span class="va">bar</span><span class="op">)</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">end</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
+<h2 id="towards-adts">Towards ADTs</h2>
+<p>Type annotations also permit the creation of aliases,
+streamlining the way we reference combined types. For instance:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@alias</span><span class="co"> FooOrString Foo|string</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@param</span><span class="co"> </span><span class="cv">foo</span><span class="co"> FooOrString</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">local</span> <span class="kw">function</span> print_foo<span class="op">(</span><span class="va">foo</span><span class="op">)</span></span></code></pre></div>
+<p>For those accustomed to Haskell, this syntax might ring a bell.
+Diving a bit deeper, let’s consider a more intricate use-case that I’ve
+<a href="https://github.com/mrcjkb/neotest-haskell/blob/c01757f54365208a63f54cea989206060f02b746/lua/neotest-haskell/treesitter.lua#L11">employed in my <code>neotest-haskell</code> plugin</a>.
+Here, I’ve depicted a type that might refer to an unopened file or, alternatively, its contents:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">---Reference to a file</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@class</span><span class="co"> FileRef</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@field</span><span class="co"> file string</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co">---Reference to a file&#39;s content</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@class</span><span class="co"> FileContentRef</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@field</span><span class="co"> content string</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@alias</span><span class="co"> TestFile FileRef | FileContentRef</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="co">---Read a FileRef.</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@param</span><span class="co"> </span><span class="cv">file_ref</span><span class="co"> FileRef</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@return</span><span class="co"> FileContentRef content_ref</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="kw">local</span> <span class="kw">function</span> to_file_content_ref<span class="op">(</span><span class="va">file_ref</span><span class="op">)</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="op">{</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    <span class="va">content</span> <span class="op">=</span> <span class="va">lib</span><span class="op">.</span><span class="va">files</span><span class="op">.</span>read<span class="op">(</span><span class="va">file_ref</span><span class="op">.</span><span class="va">file</span><span class="op">),</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@param</span><span class="co"> </span><span class="cv">query</span><span class="co"> string|table The tree-sitter query.</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@param</span><span class="co"> </span><span class="cv">ref</span><span class="co"> TestFile The test file.</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@return</span><span class="co"> ...</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="va">treesitter</span><span class="op">.</span>iter_ts_matches<span class="op">(</span><span class="va">query</span><span class="op">,</span> <span class="va">ref</span><span class="op">)</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>  <span class="kw">local</span> <span class="va">source</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="va">ref</span><span class="op">.</span><span class="va">file</span> <span class="cf">then</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>    <span class="co">---</span><span class="an">@cast</span><span class="co"> ref FileRef</span></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>    <span class="va">source</span> <span class="op">=</span> to_file_content_ref<span class="op">(</span><span class="va">ref</span><span class="op">)</span></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>  <span class="cf">else</span></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>    <span class="co">---</span><span class="an">@cast</span><span class="co"> ref FileContentRef</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>    <span class="va">source</span> <span class="op">=</span> <span class="va">ref</span></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>  <span class="cf">end</span></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- &lt;omitted for brevity&gt; ...</span></span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
+<p>With these annotations, we inch Lua ever closer to the potent expressiveness of ADTs.
+This achieves a harmonious blend of type versatility and precision.</p>
+<p>Yet, it’s essential to acknowledge certain distinctions compared to real ADTs:</p>
+<ul>
+<li><code>FileRef</code> and <code>FileContentRef</code> are independent type definitions, rather than data constructors.</li>
+<li><code>TestFile</code> is an alias, not a concrete type.</li>
+<li>Lua doesn’t natively facilitate pattern matching.</li>
+</ul>
+<p>This boils down to the fact that Haskell and Rust’s type systems are <a href="https://en.wikipedia.org/wiki/Nominal_type_system">nominal</a>,
+while Lua’s is <a href="https://en.wikipedia.org/wiki/Structural_type_system">structural</a><a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>.</p>
+<p>Nevertheless, it’s feasible to simulate basic pattern matching with a function like this one:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@generic</span><span class="co"> T</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@param</span><span class="co"> </span><span class="cv">ref</span><span class="co"> TestFile</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@param</span><span class="co"> </span><span class="cv">onFileRef</span><span class="co"> fun(ref:FileRef):T</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@param</span><span class="co"> </span><span class="cv">onContentRef</span><span class="co"> fun(ref:FileContentRef):T</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@return</span><span class="co"> T</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="kw">local</span> <span class="kw">function</span> matchTestFile<span class="op">(</span><span class="va">ref</span><span class="op">,</span> <span class="va">onFileRef</span><span class="op">,</span> <span class="va">onContentRef</span><span class="op">)</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="va">ref</span><span class="op">.</span><span class="va">content</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">---</span><span class="an">@cast</span><span class="co"> ref FileContentRef</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">and</span> onContentRef<span class="op">(</span><span class="va">ref</span><span class="op">)</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="co">---</span><span class="an">@cast</span><span class="co"> ref FileRef</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">or</span> onFileRef<span class="op">(</span><span class="va">ref</span><span class="op">)</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
+<p>There’s an important caveat to note:
+While both the type annotation capabilities of <code>lua-language-server</code> and Neovim’s type annotations
+are continually evolving and improving, they’re not flawless.
+As of writing this post, the following misalignment can still occur:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span><span class="an">@type</span><span class="co"> FileRef</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="va">x</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="va">file</span> <span class="op">=</span> <span class="st">&quot;/path/to/file&quot;</span><span class="op">,</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="va">content</span> <span class="op">=</span> <span class="dv">5</span><span class="op">,</span> <span class="co">-- Type-checks and breaks `matchTestFile` at runtime</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>There is a <a href="https://github.com/LuaLS/lua-language-server/issues/1990">feature request</a>,
+with an active discussion, so I’m optimistic about a resolution in the near future.</p>
+<p>[Update]: Support for <code>---@class (exact)</code> annotations <a href="https://github.com/LuaLS/lua-language-server/commit/c2018e05de0e9eebadbe094357d22883a608fdf5">has been added</a>.</p>
+<p>I’d also love to see the ability to report diagnostics if variables or functions are not annotated.</p>
+<p>In the meantime, it pays to tread with caution.</p>
+<h2 id="statically-type-checking-your-plugins">Statically type checking your plugins</h2>
+<p>Diagnostics in your editor are great, but they’re not much of a defense if contributors
+or yourself can open PRs that disregard your type constraints.
+The silver lining? <code>lua-language-server</code> comes with a command-line interface.</p>
+<pre class="console"><code>&gt; lua-language-server --checklevel=Warning --logpath=/tmp --configpath=.luarc.json --check ./lua
+Diagnosis complete, 1 problems found, see /tmp/check.json</code></pre>
+<p>Here’s what’s happening:</p>
+<ul>
+<li>The <code>--configpath</code> option points to a configuration file,
+which can specify paths to dependencies, such as plugins and Neovim’s runtime path,
+among other things.</li>
+<li><code>--check</code> specifies a file or a project directory.</li>
+<li>If there are any diagnostics (according to the <code>--checklevel</code>),
+<code>lua-language-server</code> will log a diagnostics report, check.json, inside the directory provided to
+<code>--logpath</code>.</li>
+</ul>
+<p>To make this actionable in your workflow,
+I’ve crafted two utilities that integrate with GitHub Actions for static type-checking:</p>
+<h3 id="for-nix-enthusiasts">For Nix enthusiasts</h3>
+<p>For those in the Nix ecosystem, I’ve introduced a <code>lua-ls</code> hook
+to the <a href="https://github.com/cachix/pre-commit-hooks.nix"><code>pre-commit-hooks-nix</code></a> framework.
+This serves dual purposes: as a git pre-commit hook and for Nix checks.
+I personally prefer this for my projects, though some optimization on the <code>lua-ls</code> pre-commit hook is on my to-do list.
+If you’re developing Neovim plugins, consider <a href="https://github.com/mrcjkb/nvim-lua-nix-plugin-template">my template repository</a>.</p>
+<p>Why I prefer this approach:
+Any GitHub Actions can easily be reproduced locally, assuming you’ve
+<a href="https://nixos.org/download#download-nix">set up Nix</a> and have <a href="https://nixos.wiki/wiki/Flakes">flakes enabled</a>.</p>
+<h3 id="for-the-broader-audience">For the broader audience</h3>
+<p>For those not on the Nix train, I’ve got you covered with a <a href="https://github.com/marketplace/actions/lua-typecheck-action">simple GitHub action, named <code>lua-typecheck-action</code></a>.
+The setup is straightforward (albeit more limited), driven by a <a href="https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions">GitHub workflow YAML</a> (<a href="https://noyaml.com/">eww</a>).</p>
+<p><a href="https://noyaml.com/"><img src="https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/804f8300-4589-41d9-8461-5e5c076d5eb3" width="450" /></a></p>
+<p>I must mention that my focus has shifted away from this action, so major updates might be sparse.
+While there’s no direct support for dependencies, <a href="https://github.com/mrcjkb/lua-typecheck-action/issues/3#issuecomment-1418273692">a workaround exists</a>.</p>
+<p>P.S. A plugin that I recommend adding as a dependency for <code>lua-ls</code> type-checking
+(as well as in your editor) is <a href="https://github.com/folke/neodev.nvim"><code>neodev.nvim</code></a>.
+It is regularly updated with Neovim API type annotations for Neovim stable and nightly.</p>
+<h2 id="wrapping-up">Wrapping up</h2>
+<p>Embracing tools like <code>lua-language-server</code> can significantly enhance our experience with Lua,
+while still allowing for rapid prototyping and ease of configuration.
+Although Lua might not naturally possess the rich type systems of languages like Haskell and Rust,
+with the right techniques, we can attempt to approximate their rigor and reliability.
+Here’s to safer, more expressive Lua coding in the future!</p>
+<h2 id="dive-deeper">Dive Deeper</h2>
+<p>Inspired by this exploration into ADTs in Lua? I’d love to see how you apply these concepts:</p>
+<ul>
+<li>Try it out: Use these techniques in your own Neovim plugins.</li>
+<li>Share: Found a new approach or insight? Spread the word.</li>
+<li>Connect: Have feedback or questions? Feel free <a href="https://github.com/mrcjkb/nvim-lua-nix-plugin-template/issues">to open an issue on GitHub</a>.</li>
+</ul>
+<h2 id="credits">Credits</h2>
+<ul>
+<li>Thanks to <a href="https://owen.cafe/">Owen</a> for input and proof-reading.</li>
+</ul>
+<section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p>It appears that Lua’s union annotations are <a href="https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions">inspired by TypeScript</a>.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+    </section>
+</article>
+]]></description>
+    <pubDate>Thu, 17 Aug 2023 00:00:00 UT</pubDate>
+    <guid>mrcjkb.dev/posts/2023-08-17-lua-adts.html</guid>
+    <dc:creator>Marc Jakobi</dc:creator>
+</item>
+<item>
+    <title>Test your Neovim plugins with luarocks and busted</title>
+    <link>mrcjkb.dev/posts/2023-06-06-luarocks-test.html</link>
+    <description><![CDATA[<article>
+    <section class="header">
+        Posted on June  6, 2023
+        
+    </section>
+    <section>
+        <!-- markdownlint-disable -->
+<br />
+<div data-align="center">
+<p><a href="https://github.com/nvim-neorocks/nvim-busted-action">
+<img src="https://avatars.githubusercontent.com/u/124081866?s=400&u=0da379a468d46456477a1f68048b020cf7a99f34&v=4" alt="nvim-busted-action">
+</a></p>
+</div>
+<!-- markdownlint-restore -->
+<p>In my <a href="https://mrcjkb.dev/posts/2023-01-10-luarocks-tag-release.html">previous post</a>,
+I wrote about some pain points in the Neovim plugin ecosystem,
+and introduced the <a href="https://github.com/marketplace/actions/luarocks-tag-release">luarocks-tag-release</a>
+GitHub action, which allows you to publish your Neovim plugins to <a href="https://luarocks.org/">LuaRocks</a>,
+as a call to address those pain points.</p>
+<p>At the end, I stated that I was planning to play around with a few ideas:</p>
+<blockquote>
+<ul>
+<li>Perhaps a package manager as a proof-of-concept?</li>
+<li>Maybe a package that can use Neovim as an interpreter to run LuaRocks
+so that it can use Neovim’s Lua API in test runs?</li>
+</ul>
+</blockquote>
+<p>…and I ended up going down the second rabbit hole.</p>
+<h2 id="why-not-just-use-plenary.nvim-to-test-plugins">Why not just use <code>plenary.nvim</code> to test plugins?</h2>
+<p>Before Neovim 0.9, the status quo for Lua plugins has been to use <a href="https://github.com/nvim-lua/plenary.nvim"><code>plenary.nvim</code></a>
+for testing.
+This still seems to be the case for many (including my own plugins, as of writing this post).
+Popular plugin templates still use <code>plenary-test</code> in their CI.</p>
+<p>For example:</p>
+<ul>
+<li><a href="https://github.com/ellisonleao/nvim-plugin-template/blob/29d9752/Makefile">ellisonleao/nvim-plugin-template</a></li>
+<li><a href="https://github.com/m00qek/plugin-template.nvim/blob/704ad7b/test/Makefile">m00qek/plugin-template.nvim</a></li>
+<li><a href="https://github.com/nvim-lua/nvim-lua-plugin-template/blob/57565ed685c1fe2d16022b2d128092becac802eb/.github/workflows/tests.yml#L26">nvim-lua/nvim-lua-plugin-template</a> (Now uses <code>busted</code>)</li>
+</ul>
+<p>What are the downsides of using <code>plenary-test</code>?</p>
+<p>For one thing, it is a stripped-down re-implementation of <a href="https://lunarmodules.github.io/busted/"><code>busted</code></a>.
+As such, it only supports <a href="https://github.com/nvim-lua/plenary.nvim/blob/499e0743cf5e8075cd32af68baa3946a1c76adf1/doc/plenary-test.txt#LL55C1-L64C1">a small subset of busted items</a>.
+Functions like <code>setup</code>, <code>teardown</code>, <code>insulate</code>, <code>expose</code>, <code>finally</code>,
+or features like tagging tests, are not implemented.</p>
+<p>Another downside is that different plugins have different approaches at managing the
+<code>plenary-test</code> dependency. An approach I see quite often is to clone the plenary.nvim
+repository into <code>$HOME/.local/share/nvim/site/pack/vendor/start</code>
+and then to symlink it to the project’s root or parent directory.
+This is not very intuitive for potential contributors.
+Plus, the fact that many plugins use <code>git clone</code> to fetch the <code>HEAD</code> of plenary.nvim’s
+<code>master</code> branch, is not ideal for reproducibility.</p>
+<h2 id="enter-neovim-0.9">Enter Neovim 0.9</h2>
+<p>With the introduction of Neovim 0.9, <a href="https://neovim.io/doc/user/starting.html#-l">you can now leverage the <code>-l</code> option</a>
+to run lua scripts via the command-line interface.
+Combining this with <code>-c lua [...]</code>, Neovim transforms into a full-fledged LuaJIT interpreter,
+providing access to the <a href="https://neovim.io/doc/user/lua.html">Neovim lua API</a>.</p>
+<p>To test this out, you can create a <code>sayHello.lua</code> file with the following content:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">vim</span><span class="op">.</span>print <span class="op">{</span> <span class="st">&quot;Hello&quot;</span><span class="op">,</span> <span class="va">name</span> <span class="op">}</span></span></code></pre></div>
+<p>Then run</p>
+<pre class="console"><code>nvim -c &#39;lua name = &quot;teto&quot;&#39; -l sayHello.lua
+&gt; { &quot;Hello&quot;, &quot;teto&quot; }</code></pre>
+<p>As it turns out, it’s quite easy to run <code>busted</code> tests using Neovim 0.9+ as the interpreter.</p>
+<h2 id="how-to-test-your-plugin-with-busted">How to test your plugin with <code>busted</code></h2>
+<h3 id="prerequisites">Prerequisites</h3>
+<ul>
+<li>If your plugin has any dependencies, it is a lot easier to set up
+if they <a href="https://luarocks.org/labels/neovim">are available on LuaRocks</a>.</li>
+<li>So in case they aren’t, open an issue asking to publish releases to LuaRocks,
+e.g. using the <a href="https://github.com/marketplace/actions/luarocks-tag-release">luarocks-tag-release</a>
+GitHub action.</li>
+<li>Install <code>luarocks</code> using your distro’s package manager
+and also install <code>LuaJIT</code> or <code>Lua 5.1</code>.
+The version doesn’t matter, since we’ll be using Neovim as the interpreter.
+But <code>luarocks</code> needs a real Lua installation that exposes its C header files to
+install certain dependencies.</li>
+</ul>
+<h3 id="preparing-your-plugin">Preparing your plugin</h3>
+<h4 id="add-a-.rockspec-file">1. Add a <code>.rockspec</code> file</h4>
+<p>Add a <a href="https://github.com/luarocks/luarocks/wiki/Rockspec-format">rockspec</a>
+named <code>&lt;my-plugin&gt;-scm-1.rockspec</code><a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> to your project’s root.</p>
+<p>A minimal rockspec for testing might look something like this:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="va">rockspec_format</span> <span class="op">=</span> <span class="st">&#39;3.0&#39;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="va">package</span> <span class="op">=</span> <span class="st">&#39;&lt;my-plugin&gt;&#39;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="va">version</span> <span class="op">=</span> <span class="st">&#39;scm-1&#39;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="va">test_dependencies</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">&#39;lua &gt;= 5.1&#39;</span><span class="op">,</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="st">&#39;nlua&#39;</span><span class="op">,</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="st">&#39;nui.nvim&#39;</span><span class="op">,</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="va">source</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="va">url</span> <span class="op">=</span> <span class="st">&#39;git://github.com/mrcjkb/&#39;</span> <span class="op">..</span> <span class="va">package</span><span class="op">,</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="va">build</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">type</span> <span class="op">=</span> <span class="st">&#39;builtin&#39;</span><span class="op">,</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>This file tells luarocks and <code>busted</code> how to build your plugin as a Lua package
+and which dependencies to install before running tests.</p>
+<h4 id="add-a-.busted-file">2. Add a <code>.busted</code> file</h4>
+<p>Next, add a <code>.busted</code> file to the root of your project, to configure <code>busted</code>.
+This file should contain the following content:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> <span class="op">{</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="va">_all</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="va">coverage</span> <span class="op">=</span> <span class="kw">false</span><span class="op">,</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="va">lpath</span> <span class="op">=</span> <span class="st">&quot;lua/?.lua;lua/?/init.lua&quot;</span><span class="op">,</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="va">lua</span> <span class="op">=</span> <span class="st">&quot;nlua&quot;</span><span class="op">,</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">},</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="va">default</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="va">verbose</span> <span class="op">=</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">},</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  <span class="va">tests</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="va">verbose</span> <span class="op">=</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  <span class="op">},</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<blockquote>
+<p><strong>Note</strong></p>
+<ul>
+<li>The <code>lpath</code> is necessary to tell <code>busted</code> to look for your plugin’s source
+code in the <code>lua</code> directory.</li>
+<li><code>lua = "nlua"</code> runs your tests with <a href="https://github.com/mfussenegger/nlua"><code>nlua</code></a>
+(a Neovim-Lua CLI adapter) as the Lua interpreter.</li>
+</ul>
+</blockquote>
+<h4 id="run-your-tests">3. Run your tests</h4>
+<p>That’s it! You can run your tests with</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">luarocks</span> test <span class="at">--local</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co"># or</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="ex">busted</span></span></code></pre></div>
+<p>Without any arguments, <code>busted</code> looks for <code>*_spec.lua</code> files in
+a directory named <code>spec</code>.</p>
+<p>Or if you want to run a single test file:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">luarocks</span> test spec/path_to_file.lua <span class="at">--local</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co"># or</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="ex">busted</span> spec/path_to_file.lua</span></code></pre></div>
+<h2 id="using-github-actions-to-run-tests">Using GitHub Actions to run tests</h2>
+<p>So far, this post has discussed using <code>busted</code> locally for testing Neovim plugins.
+However, to ensure thorough testing, compatibility, and bug detection across different environments,
+it’s essential to make this approach compatible with CI workflows like GitHub Actions.</p>
+<p>For that, you can use the <a href="https://github.com/nvim-neorocks/nvim-busted-action">nvim-busted-action</a>,
+which will take care of all the setup for you.</p>
+<h2 id="moving-forward">Moving forward</h2>
+<p>If this has motivated you to try out using <code>luarocks</code> and <code>busted</code> to test your Neovim plugins,
+I’d love to <a href="https://github.com/nvim-neorocks/nvim-busted-action/discussions/categories/ideas">hear your feedback</a>!</p>
+<ul>
+<li>Have you run into any issues?</li>
+<li>Is there still something Neovim-specific that <code>plenary-test</code> provides,
+which you are missing from this approach?</li>
+<li>Do you have any other thoughts?</li>
+</ul>
+<p>Personally, I would like to see LuaRocks being able to run using Neovim,
+without having to install Lua.
+This possibility doesn’t seem far-fetched, especially considering that
+<a href="https://github.com/luarocks/luarocks/issues/1499#issuecomment-1492486727">there are other communities that would also benefit from such an integration</a>.</p>
+<blockquote>
+<p><strong>Note</strong></p>
+<p>This post has been updated to use <a href="https://github.com/mfussenegger/nlua"><code>nlua</code></a>,
+instead of creating a busted wrapper script manually.</p>
+</blockquote>
+<section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Replace <code>&lt;my-plugin&gt;</code> with the name of your plugin.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+    </section>
+</article>
+]]></description>
+    <pubDate>Tue, 06 Jun 2023 00:00:00 UT</pubDate>
+    <guid>mrcjkb.dev/posts/2023-06-06-luarocks-test.html</guid>
+    <dc:creator>Marc Jakobi</dc:creator>
+</item>
+<item>
+    <title>Publish your Neovim plugins to LuaRocks</title>
+    <link>mrcjkb.dev/posts/2023-01-10-luarocks-tag-release.html</link>
+    <description><![CDATA[<article>
+    <section class="header">
+        Posted on January 10, 2023
+        
+    </section>
+    <section>
+        <p>This is a follow-up on a <a href="https://teto.github.io/posts/2021-09-17-neovim-plugin-luarocks.html">series of blog posts</a> by <span class="citation" data-cites="teto">@teto</span> that propose a solution to a major pain point of the Neovim plugin ecosystem - Dependency management.</p>
+<p>As someone who only recently started maintaining Neovim plugins, I have been quite frustrated with my experience so far…</p>
+<h2 id="the-current-status-quo">The current status quo</h2>
+<h3 id="a-horrible-ux">1. A horrible UX</h3>
+<p>…where users, not plugin authors, have to declare dependencies.</p>
+<p><a href="https://github.com/junnplus/lsp-setup.nvim#packernvim">Here’s</a> an example using <code>packer.nvim</code>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>use <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&#39;junnplus/lsp-setup.nvim&#39;</span><span class="op">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="va">requires</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;neovim/nvim-lspconfig&#39;</span><span class="op">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;williamboman/mason.nvim&#39;</span><span class="op">,</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;williamboman/mason-lspconfig.nvim&#39;</span><span class="op">,</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>This shouldn’t be the user’s responsibility.</p>
+<p>What if dependencies are added or changed? It’s the user who has to update their config or deal with breakage.</p>
+<h3 id="plugin-authors-copypasting-code-instead-of-using-libraries">2. Plugin authors copy/pasting code instead of using libraries</h3>
+<p>…because they don’t want their users to have to deal with this horrible UX.</p>
+<p>I’ve been guilty of doing so myself.</p>
+<h3 id="instability">3. Instability</h3>
+<p>As far as I know, we currently have no easy way to declare version constraints for dependencies.
+Something that <a href="https://luarocks.org/">LuaRocks</a> supports, and which definitely should not be left up to the user.</p>
+<p>All of this potentially gets worse with transitive dependencies.</p>
+<h2 id="the-vicious-cycle">The vicious cycle</h2>
+<p>As I see it, we have ourselves a dilemma:</p>
+<ul>
+<li>Neovim plugin authors don’t use LuaRocks because plugin managers don’t support it.</li>
+<li>Plugin managers don’t support LuaRocks properly <a href="https://github.com/folke/lazy.nvim/issues/253#issuecomment-1411534276">because there aren’t enough plugins that use it</a>.</li>
+</ul>
+<p>This is something I’ve observed in many fields.
+For example, critics of electromobility have claimed that EVs will never be feasible, because we don’t have enough charging infrastructure.
+But which came first? Cars, or petrol stations?</p>
+<p>I’m a strong believer that we need plugin authors to publish their packages to LuaRocks before package managers start supporting it.
+Just like we had cars before petrol stations, and electric vehicles before charging infrastructure.</p>
+<h2 id="introducing-the-luarocks-tag-release-action">Introducing the <a href="https://github.com/marketplace/actions/luarocks-tag-release">LuaRocks tag release action</a></h2>
+<p>As a catalyst to alleviate these issues, <span class="citation" data-cites="teto">@teto</span> and I have started the <a href="https://github.com/nvim-neorocks/"><code>nvim-neorocks</code></a> organisation and released the <a href="https://github.com/marketplace/actions/luarocks-tag-release"><code>luarocks-tag-release</code></a> GitHub action.</p>
+<p>The goal is to minimise the effort for developers to release their plugins to LuaRocks,
+and to keep their published packages up to date.</p>
+<h3 id="how-to-get-started-as-a-plugin-developer">How to get started as a plugin developer?</h3>
+<ul>
+<li>All you need is a <a href="https://luarocks.org/login">LuaRocks account</a> and an <a href="https://luarocks.org/settings/api-keys">API key</a>.</li>
+<li>Add the API key to your repo’s <a href="https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository">GitHub actions secrets</a>.</li>
+<li>Finally, create a <code>.github/workflows/release.yml</code> in your repository that uses the <code>luarocks-tag-release</code> action:</li>
+</ul>
+<div class="sourceCode" id="cb2"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">name</span><span class="kw">:</span><span class="at"> LuaRocks release</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">on</span><span class="kw">:</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">push</span><span class="kw">:</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">tags</span><span class="kw">:</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="st">&quot;*&quot;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="fu">jobs</span><span class="kw">:</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">luarocks-release</span><span class="kw">:</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">runs-on</span><span class="kw">:</span><span class="at"> ubuntu-latest</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> LuaRocks upload</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">steps</span><span class="kw">:</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Checkout</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> actions/checkout@v3</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> LuaRocks Upload</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> nvim-neorocks/luarocks-tag-release@v4</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">env</span><span class="kw">:</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">LUAROCKS_API_KEY</span><span class="kw">:</span><span class="at"> ${{ secrets.LUAROCKS_API_KEY }}</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">with</span><span class="kw">:</span><span class="co"> # Optional inputs...</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="fu">          dependencies</span><span class="kw">: </span><span class="ch">|</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>            plenary.nvim</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>            nvim-lspconfig</span></code></pre></div>
+<p>Whenever you push a tag (expected to adhere to <a href="https://semver.org/">semantic versioning</a>),
+the workflow will:</p>
+<ol type="1">
+<li>Automatically fetch most of the relevant information (summary, license, …) from GitHub</li>
+<li>Generate a rockspec for the release</li>
+<li>Run a test to make sure LuaRocks can install your plugin locally</li>
+<li>Publish your plugin to LuaRocks</li>
+<li>Run a test to verify that your plugin can be installed from LuaRocks</li>
+</ol>
+<p>If you need more flexibility, you can <a href="https://github.com/marketplace/actions/luarocks-tag-release#inputs">specify additional inputs</a> or even use a <a href="https://github.com/marketplace/actions/luarocks-tag-release#template">rockspec template</a>.</p>
+<p>To advertise that your plugin is available on LuaRocks, you can add a shield to your README:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="al">![LuaRocks](https://img.shields.io/luarocks/v/&lt;user&gt;/&lt;plugin&gt;?logo=lua&amp;color=purple)</span><span class="co">](https://luarocks.org/modules/&lt;user&gt;/&lt;plugin&gt;)</span></span></code></pre></div>
+<p>For example:</p>
+<p><a href="https://luarocks.org/modules/neovim/nvim-lspconfig"><img src="https://img.shields.io/luarocks/v/neovim/nvim-lspconfig?logo=lua&amp;color=purple" alt="LuaRocks" /></a></p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="al">![LuaRocks](https://img.shields.io/luarocks/v/neovim/nvim-lspconfig?logo=lua&amp;color=purple)</span><span class="co">](https://luarocks.org/modules/neovim/nvim-lspconfig)</span></span></code></pre></div>
+<p>Here are some workflows and PRs you can use for inspiration:</p>
+<ul>
+<li><a href="https://github.com/neovim/nvim-lspconfig/blob/master/.github/workflows/release.yml"><code>nvim-lspconfig</code></a></li>
+<li><a href="https://github.com/mrcjkb/haskell-tools.nvim/blob/master/.github/workflows/release.yml"><code>haskell-tools.nvim</code></a></li>
+<li><a href="https://github.com/mrcjkb/telescope-manix/blob/master/.github/workflows/release.yml"><code>telescope-manix</code></a> - an extension that depends on <a href="https://github.com/nvim-telescope/telescope.nvim/pull/2364"><code>telescope.nvim</code></a>[^1].</li>
+<li><a href="https://github.com/nvim-treesitter/nvim-treesitter/pull/4109"><code>nvim-treesitter</code></a>[^1] - A more complex example that uses a template to build with Make.</li>
+<li><a href="https://github.com/nvim-lua/plenary.nvim/pull/458/files"><code>plenary.nvim</code></a>[^1] - Another example that uses a template so that LuaRocks runs tests.</li>
+<li><a href="https://github.com/ibhagwan/fzf-lua/blob/main/.github/workflows/luarocks-release.yaml"><code>fzf-lua</code></a> - A scheduled workflow that realeases versions based on the number of commits, if there have been new commits since the last run.</li>
+</ul>
+<p>[^1] pull request</p>
+<p>See also <a href="https://github.com/nvim-neorocks/luarocks-tag-release/wiki/Example-configurations">the workflow’s wiki page</a>.</p>
+<h3 id="what-can-you-do-as-a-neovim-user">What can you do as a Neovim user?</h3>
+<p>If you don’t maintain your own plugins, but want to see the ecosystem improve, you can suggest the workflow to your favourite plugins, or open a pull request.
+In most cases, it’s extremely easy to add the workflow. See the above PR examples.</p>
+<p>If you run in to problems or have any questions, don’t hesitate to <a href="https://github.com/nvim-neorocks/luarocks-tag-release/issues">open an issue</a> or <a href="https://github.com/nvim-neorocks/luarocks-tag-release/discussions">start a discussion</a>!</p>
+<h3 id="whats-next">What’s next?</h3>
+<p>For now, I am experimenting with a fork of LuaRocks, stripped down to the bare minimum needed to install packages.
+I am still uncertain of what that will lead to in the near future.</p>
+<ul>
+<li>Perhaps a package manager as a proof-of-concept?</li>
+<li>Maybe a package that can use Neovim as an interpreter to run LuaRocks so that it can use Neovim’s Lua API in test runs?</li>
+</ul>
+<p>Hopeful for the future. Let’s make this happen!</p>
+<h3 id="follow-up">Follow-up</h3>
+<p><a href="https://mrcjkb.dev/posts/2023-06-06-luarocks-test.html">Test your Neovim plugins with luarocks and busted</a></p>
+    </section>
+</article>
+]]></description>
+    <pubDate>Tue, 10 Jan 2023 00:00:00 UT</pubDate>
+    <guid>mrcjkb.dev/posts/2023-01-10-luarocks-tag-release.html</guid>
+    <dc:creator>Marc Jakobi</dc:creator>
+</item>
+
+    </channel>
+</rss>
