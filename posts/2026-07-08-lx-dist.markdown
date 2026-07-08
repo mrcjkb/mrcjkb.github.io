@@ -1,0 +1,47 @@
+---
+title: lx dist - distribute your Lua projects as archives or standalone binaries
+tags: lux, lua, luarocks
+class: container
+---
+
+[Lux](https://lux.lumen-labs.org) is the Lua package manager I've been working
+on with [vhyrro](https://vhyrro.neorg.org/) and
+[ntbbloodbath](https://ntbbloodbath.github.io/) -- think `uv` or `cargo`, but
+for Lua.
+A question I've heard occasionally: "I built something with Lux, now how do I
+give it to someone who doesn't use it (or luarocks)?"
+Starting with 0.35.2, there are two answers to that question.
+
+## `lx dist flat-archive`
+
+Bundle your project and all its runtime dependencies into a single `.zip`.
+No need for the recipient to install Lux or set up dependency trees.
+
+```
+lx dist flat-archive
+```
+
+Pick a compression method if the default isn't what you need:
+
+```
+lx dist flat-archive --compression-method zstd
+```
+
+## `lx dist bin`
+
+Compile your project into a standalone executable. Based on
+[luastatic](https://github.com/ers35/luastatic), but it also works on Windows
+(MSVC) -- not just Linux and macOS (yes, I once again resorted to printf debugging via
+GitHub Actions for Windows). You can link native C modules on Linux too, if your
+project needs them.
+
+```
+lx dist bin
+```
+
+## Learn more
+
+- I wrote detailed walkthroughs in the [how-to guide](https://lux.lumen-labs.org/guides/publishing#distributing-an-archive-or-a-binary)
+  and [tutorial](https://lux.lumen-labs.org/tutorial/publishing#distributing-an-archive-or-a-binary).
+- The [source code](https://github.com/lumen-oss/lux) if you want to peek under the hood
+- [Sponsor the project](https://opencollective.com/lumen-labs/) on Open Collective if you'd like to support it
