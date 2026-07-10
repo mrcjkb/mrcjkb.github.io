@@ -9,8 +9,8 @@ on with [vhyrro](https://vhyrro.neorg.org/) and
 [ntbbloodbath](https://ntbbloodbath.github.io/) -- think `uv` or `cargo`, but
 for Lua.
 A question I've heard occasionally: "I built something with Lux, now how do I
-give it to someone who doesn't use it (or luarocks)?"
-Starting with 0.35.2, there are two answers to that question.
+give it to someone who doesn't use it?"
+Starting with v0.35.3, there are two answers to that question.
 
 ## `lx dist flat-archive`
 
