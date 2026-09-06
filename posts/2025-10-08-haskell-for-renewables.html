@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>mrcjkb.dev - Why Haskell is the perfect fit for renewable energy tech</title>
+        <link rel="stylesheet" href="../css/default.css" />
+        <link rel="stylesheet" href="../css/syntax.css" />
+    </head>
+    <body>
+        <header>
+            <div class="container">
+              <div class="logo">
+                  <a href="../">mrcjkb.dev</a>
+              </div>
+              <nav>
+                  <a href="../">Home</a>
+                  <a href="../about.html">About</a>
+                  <a href="../contact.html">Contact</a>
+                  <a href="../cv.html">CV</a>
+                  <a href="../archive.html">Archive</a>
+                  <a href="../rss.xml">RSS feed</a>
+                  <a href="../atom.xml">Atom feed</a>
+              </nav>
+            </div>
+        </header>
+
+        <main role="main">
+            <div class="container">
+              <h1>Why Haskell is the perfect fit for renewable energy tech</h1>
+              <article>
+    <section class="header">
+        Posted on October  8, 2025
+        
+    </section>
+    <section>
+        <p>My background isn’t the typical path to becoming a software engineer.
+I didn’t study computer science. Instead, I earned both a bachelor’s and a master’s degree
+in Renewable Energy Systems from HTW Berlin.
+Somehow, that journey led me to become a professional Haskell developer,
+building distributed power management and delivery systems.</p>
+<p>In Europe, the tech job market is dominated by object-oriented languages like Java and C#.
+Meanwhile, Haskell remains a relatively niche language,
+often associated with blockchain and finance.
+Yet, in my experience, Haskell is a perfect fit for the complexities of renewable energy technology,
+an area that could greatly benefit from the power of functional programming.</p>
+<p>In this article, I’ll share my journey into Haskell and explain
+why I believe it has untapped potential in the renewable energy sector,
+despite its limited presence in the mainstream job market.</p>
+<h2 id="dont-panic-about-thermodynamics">Don’t panic about thermodynamics</h2>
+<p>During my university years, thermodynamics and energy process engineering
+were notorious among students.
+The courses were packed with daunting formulas - far too many to memorize,
+and far too complex to reference in the heat of an exam.</p>
+<p>But one piece of advice from our professor changed everything for me.
+She encouraged us to truly understand the international system of units (SI),
+especially by practicing how to juggle and decompose them into their seven base units<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>.</p>
+<p>For instance, one can break down the unit Watt (power)
+into its base components: kilogram, metre, and second (<code>W = kg · m² / s³</code>).
+With this trick, I could solve problems by letting the units guide me,
+rather than relying on rote memorization.
+I minimized what I needed to write down and found myself finishing exams with plenty
+of time to spare, and scoring perfectly every time.</p>
+<p>What I didn’t realise at the time, was that this mindset of letting structure and units
+guide my reasoning was strikingly similar to type-driven development,
+a concept I’d only discover years later.</p>
+<h2 id="flexible-systems-fragile-scripts">Flexible systems, fragile scripts</h2>
+<p>Early on during my studies, I started working part-time in one of my university’s research groups.
+On my first day, I was handed a MATLAB book and, after a week of self-study,
+began contributing to the development of simulation models and control algorithms
+for solar storage systems.</p>
+<p>These models and algorithms are especially important for renewable energy systems.
+While traditional fossil power sources tend to be sluggish and operate in predictable, steady ways,
+renewables are inherently variable.
+They thrive when supported by flexibility and intelligent control.</p>
+<p>The code we wrote was anything but pretty.
+For example, here’s a function we published that simulates an AC-coupled lithium-ion battery:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> [<span class="va">Ppv</span><span class="op">,</span> <span class="va">Pbat</span><span class="op">,</span> <span class="va">Ppvs</span><span class="op">,</span> <span class="va">Pbs</span><span class="op">,</span> <span class="va">Pperi</span><span class="op">,</span> <span class="va">soc</span>] <span class="op">=</span> <span class="va">PerModAC</span>(<span class="va">s</span><span class="op">,</span> <span class="va">sim</span><span class="op">,</span> <span class="va">pvmod</span><span class="op">,</span> <span class="va">Pl</span><span class="op">,</span> <span class="va">ppv</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="va">SOC_h</span> <span class="op">=</span> <span class="va">s</span>.<span class="va">SOC_h</span><span class="op">;</span> <span class="co">% Hysteresis threshold for the recharging of the battery</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="va">P_AC2BAT_DEV</span> <span class="op">=</span> <span class="va">s</span>.<span class="va">P_AC2BAT_DEV</span><span class="op">;</span> <span class="co">% Mean stationary deviation of the charging power in W</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="va">P_BAT2AC_DEV</span> <span class="op">=</span> <span class="va">s</span>.<span class="va">P_BAT2AC_DEV</span><span class="op">;</span> <span class="co">% Mean stationary deviation of the discharging power in W</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">% ...</span></span></code></pre></div>
+<p>I won’t get into too much detail, but the main issue with scripting languages
+like Python or MATLAB quickly became apparent:</p>
+<p>In this example, the argument <code>ppv</code> is expected to be a vector containing the
+normalized DC power output of the PV generator in <code>kW/kWp</code><a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>.</p>
+<p>However, nothing stops the caller of this function from passing in anything they want - even
+a string.
+And, dare I say, I’m quite confident that I have never met a MATLAB programmer
+who knows what a unit test is.
+Our approach to testing involved generating graphs and comparing them qualitatively
+with measured data.
+This process is both time-consuming and error-prone, and it only proves effective if done
+frequently and validated thoroughly.
+It relies heavily on human effort rather than leveraging the assistance of automated tools.
+Without proper safeguards in place, small errors can easily go unnoticed, resulting in fragile code
+and more difficult troubleshooting.</p>
+<h2 id="why-traditional-oop-falls-short">Why traditional OOP falls short</h2>
+<p>My first full-time job was writing simulation software for sector-coupled renewable
+energy systems in Java.
+Having a compiler that provides some type safety was a huge improvement over
+my prior MATLAB experiences.
+To compare, a simulation model for a battery might look something like this<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="kw">class</span> ACBattery <span class="op">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  ACBatterySpec spec<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Energy content in watt-hours</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">double</span> energyWh<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Constructor omitted for brevity</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="co">/**</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co">  * </span><span class="an">@param</span><span class="co"> </span><span class="an">powerW</span><span class="co"> -</span> The charging power in watts</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="co">*</span> <span class="an">@param</span><span class="co"> </span><span class="an">durationS</span><span class="co"> -</span> The duration in seconds</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="co">*/</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="kw">public</span> <span class="dt">void</span> <span class="fu">charge</span><span class="op">(</span><span class="dt">double</span> powerW<span class="op">,</span> <span class="dt">double</span> durationS<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Implementation omitted for brevity</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>While callers can no longer pass in completely wrong types, two major issues remain:</p>
+<ol type="1">
+<li>The units are encoded <em>in the variable names</em>.</li>
+<li>Both arguments of the <code>charge</code> function are semantically different, but they have
+the same type.</li>
+</ol>
+<p>A third issue is that object-oriented languages are designed to be stateful,
+which causes difficulty with concurrency and makes testing very challenging.</p>
+<p>This approach is not expressive enough
+to prevent someone from passing in a value with the wrong unit,
+or from misusing the arguments in the implementation.
+As a result, unit tests must be written just to compensate for this lack of type safety.</p>
+<p>Technically, it’s possible to define types for each argument:
+For example, consider using the <a href="https://unitsofmeasurement.github.io/unit-api/"><code>unit-api</code></a>
+library to encode units:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="kw">class</span> ACBattery <span class="op">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  ACBatterySpec spec<span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  Quantity<span class="op">&lt;</span>Energy<span class="op">&gt;</span> energy<span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Constructor omitted for brevity</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="co">/**</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co">   * </span><span class="an">@param</span><span class="co"> </span><span class="an">power</span><span class="co"> </span>Charging power</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>   <span class="co">*</span> <span class="an">@param</span><span class="co"> </span><span class="an">duration</span><span class="co"> </span>Charging duration</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>   <span class="co">*/</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="kw">public</span> <span class="dt">void</span> <span class="fu">charge</span><span class="op">(</span>Quantity<span class="op">&lt;</span>Power<span class="op">&gt;</span> power<span class="op">,</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>                     Quantity<span class="op">&lt;</span><span class="bu">Time</span><span class="op">&gt;</span> duration<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    Quantity<span class="op">&lt;</span>Energy<span class="op">&gt;</span> energyAdded <span class="op">=</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>      power<span class="op">.</span><span class="fu">multiply</span><span class="op">(</span>duration<span class="op">).</span><span class="fu">asType</span><span class="op">(</span>Energy<span class="op">.</span><span class="fu">class</span><span class="op">);</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="fu">energy</span> <span class="op">=</span> <span class="kw">this</span><span class="op">.</span><span class="fu">energy</span><span class="op">.</span><span class="fu">add</span><span class="op">(</span>energyAdded<span class="op">);</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>This approach is more robust:</p>
+<ul>
+<li>You cannot accidentally pass a length or temperature where a power or time is expected.</li>
+<li>The compiler will prevent you from trying to compose incompatible units.</li>
+</ul>
+<p>But in a language like Java, this comes at a cost:</p>
+<ul>
+<li>It means object allocation, runtime conversions and dynamic dispatch,
+which can introduce significant performance costs.</li>
+<li>Instead of using basic arithmetic operators (<code>+</code>, <code>-</code>, <code>*</code>, …),
+you now have to use redefined functions (<code>add</code>, <code>multiply</code>, etc.).</li>
+</ul>
+<p>Not to mention a significant increase in verbosity / boilerplate you must maintain.
+That harms the one thing business cares about: <em>developer productivity</em>.</p>
+<p>In my experience working across multiple Java codebases,
+all of them ultimately relied on primitives for physical quantities,
+sacrificing safety for simplicity and speed.</p>
+<h2 id="type-driven-development-the-haskell-advantage">Type-Driven Development: The Haskell advantage</h2>
+<p>Having previously reaped the benefits of letting units guide my reasoning,
+it didn’t take long for me to start exploring whether type systems could
+offer the same reliability.
+About five years ago, I taught myself Haskell, and a year later joined my current employer,
+who gave me the opportunity to use it professionally in the renewable domain
+I’m so passionate about.</p>
+<p>In Haskell, types are a rigorous framework for representing real-world constraints directly in code.
+Here’s how the same <code>charge</code> function’s type signature might look,
+using Haskell’s <a href="https://hackage.haskell.org/package/dimensional"><code>dimensional</code></a>
+library, which “provides statically-checked dimensional arithmetic for physical quantities,
+using the 7 SI base dimensions”:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">ACBattery</span> num</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> <span class="dt">ACBattery</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> spec ::</span> <span class="dt">ACBatterySpec</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> energy ::</span> <span class="dt">Energy</span> num</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="ot">charge ::</span> <span class="dt">Fractional</span> num <span class="ot">=&gt;</span> <span class="dt">Power</span> num <span class="ot">-&gt;</span> <span class="dt">Time</span> num <span class="ot">-&gt;</span> <span class="dt">ACBattery</span> num <span class="ot">-&gt;</span> <span class="dt">ACBattery</span> num</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>charge power time battery <span class="ot">=</span> <span class="co">-- Implementation omitted for brevity</span></span></code></pre></div>
+<p>If you’re unfamiliar with a functional language like Haskell, this might look cryptic.
+But bear with me - let’s break it down:</p>
+<ul>
+<li>The function uses a type constraint, <code>Fractional num</code>, which lets the caller specify
+the underlying numeric representation.
+For example, <code>num</code> could be <code>Double</code> for floating-point, or something more precise like
+<code>Pico</code> or <code>Milli</code> for <a href="https://hackage.haskell.org/package/base-4.21.0.0/docs/Data-Fixed.html"><code>fixed-point</code></a>.</li>
+</ul>
+<p>A less generic version of this function might look like:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ot">charge ::</span> <span class="dt">Power</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Time</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">ACBattery</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">ACBattery</span> <span class="dt">Double</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>charge power time battery <span class="ot">=</span> <span class="co">-- Implementation omitted for brevity</span></span></code></pre></div>
+<ul>
+<li><p>The first and second arguments are the power we supply to the battery
+and the amount of time we supply it for.</p></li>
+<li><p>The third argument, <code>ACBattery</code>, is the battery’s current state.
+Haskell is stateless by design, so the (immutable) state is passed in,
+and a new state is returned, making reasoning about code and testing much simpler.</p></li>
+<li><p>The final <code>-&gt; ACBattery num</code> means the function evaluates to the battery’s updated state
+after charging.</p></li>
+</ul>
+<p>Notice the absence of error-prone, manual unit conversions, or units in the variable names?
+This aligns perfectly with the <a href="https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/">Parse, don’t validate principle</a>.
+By encoding expectations in the types, you ensure that only correctly-formed data
+enters your core logic.
+Once data are parsed into these types, you don’t need to check them at runtime,
+they’re guaranteed by the compiler.</p>
+<p>Let’s simplify the function even further, focusing on just energy transformation:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ot">charge ::</span> <span class="dt">Power</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Time</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Energy</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Energy</span> <span class="dt">Double</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>charge power time energy <span class="ot">=</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    energy <span class="op">+</span> power <span class="op">*</span> time</span></code></pre></div>
+<p>Instead of a battery state, this version takes the battery’s energy before charging
+and evaluates to the energy after charging.</p>
+<p>Unlike in Java, where using units libraries requires verbose method calls like <code>add</code> and <code>multiply</code>,
+we can use our familiar arithmetic operators directly.
+Another advantage is that because <code>dimensional</code> uses Haskell’s <a href="https://wiki.haskell.org/index.php?title=Newtype"><code>newtype</code> declarations</a>,
+each quantity is represented internally as its underlying numeric type.
+This means that, at runtime, we can expect negligible overhead compared to
+plain numeric operations<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a> - unlike Java’s units libraries,
+which rely on object allocation and dynamic dispatch.</p>
+<p>When calling the <code>charge</code> function, you specify the units directly:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>example <span class="ot">=</span> charge chargingPower duration currentEnergy</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    chargingPower <span class="ot">=</span> <span class="dv">1</span> <span class="op">*~</span> kilo <span class="dt">Watt</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    duration <span class="ot">=</span> <span class="dv">30</span> <span class="op">*~</span> second</span></code></pre></div>
+<p>The dimensional library ensures that only compatible quantities can be composed.
+If you accidentally swap arguments or use the wrong operation, you won’t get mysterious runtime bugs,
+you’ll get a clear, immediate type error:</p>
+<p><img src="../images/charge_type_error.png" style="float: center; margin: 10px; max-width: 900px" /></p>
+<p>If I multiply <code>power * time</code> instead of trying to divide, the error disappears,
+because the units align.
+It feels almost magical: Haskell’s type system, together with <code>dimensional</code>,
+lets the compiler guide you toward correct implementations.
+Unit safety, domain modeling, and strong typing aren’t just academic.
+They’re practical tools for building reliable, maintainable software in renewable energy and beyond.</p>
+<p>All this time I had no idea: My thermodynamics professor had taught me that Haskell is
+the perfect fit for renewable energy tech!</p>
+<h2 id="test-driven-development-focus-on-what-matters">Test-Driven Development: Focus on what matters!</h2>
+<p>I’m a strong advocate for <a href="https://wiki.c2.com/?FakeItUntilYouMakeIt">test-driven development (fake it till you make it)</a>.
+In my experience, it’s the best way to ensure high-quality, meaningful test coverage.
+One major reason people avoid TDD is that it can seem tedious,
+especially in traditional OOP, where unit tests often compensate for weak type safety.
+With Haskell, we can write tests that catch far more bugs with far less code,
+by focusing on what matters: properties and behaviour.</p>
+<p>Powerful libraries like <a href="https://hackage.haskell.org/package/QuickCheck"><code>QuickCheck</code></a>,
+and its integration with frameworks such as <a href="https://hackage.haskell.org/package/tasty-quickcheck"><code>tasty-quickcheck</code></a>,
+allow you to express and test mathematical properties directly,
+rather than writing tests for specific cases or edge conditions.</p>
+<p>Here’s a hypothetical example:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ot">chargingTest ::</span> <span class="dt">TestTree</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>chargingTest <span class="ot">=</span> testGroup <span class="st">&quot;Charging&quot;</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  [ testProperty <span class="st">&quot;does not exceed maximum capacity&quot;</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>      \(<span class="dt">Positive</span> duration) (<span class="dt">Positive</span> power) (<span class="dt">Small</span> energyDelta) <span class="ot">-&gt;</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>        <span class="kw">let</span> previousState <span class="ot">=</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>              testBattery { energy <span class="ot">=</span> maxCapacity testBatterySpec <span class="op">-</span> <span class="fu">abs</span> energyDelta }</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>            newState <span class="ot">=</span> charge power duration previousState</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>            newEnergy <span class="ot">=</span> energy newState</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        <span class="kw">in</span> newEnergy <span class="op">&lt;=</span> maxCapacity testBatterySpec</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  , testProperty <span class="st">&quot;does not exceed nominal AC charging power&quot;</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>      \(<span class="dt">Positive</span> duration) (<span class="dt">NonNegative</span> deltaPower) (<span class="dt">NonNegative</span> energy) <span class="ot">-&gt;</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>        <span class="co">-- Implementation omitted for brevity</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- ...</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  ]</span></code></pre></div>
+<p>With property-based testing, the framework generates a wide variety of (pseudo-)random inputs for you,
+so you don’t have to hand-craft edge cases.
+This approach lets you verify that your code upholds the core invariants and
+physical laws of your domain, rather than just checking a handful of examples.</p>
+<h2 id="credits">Credits</h2>
+<p>Thanks to Alex Drake (who I hack on Haskell clean tech with in our free time) for proof-reading.</p>
+<h2 id="discuss">Discuss</h2>
+<ul>
+<li><a href="https://news.ycombinator.com/item?id=45514024">HackerNews</a></li>
+<li><a href="https://discourse.haskell.org/t/why-haskell-is-the-perfect-fit-for-renewable-energy-tech/">Haskell discourse</a></li>
+<li><a href="https://www.reddit.com/r/haskell/s/Wy8E2s7UB4">Reddit</a></li>
+</ul>
+<section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p>second, metre, kilogram, ampere, kelvin, mole and candela.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>kiloWatts per kiloWatt-peak (= peak power of the PV generator).<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>Strongly simplified for brevity<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p>Disclaimer: <code>dimensional</code> does not yet provide any benchmarks at the time of writing.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+    </section>
+</article>
+
+            </div>
+        </main>
+
+        <footer>
+            <div class="container">
+              Site proudly generated by
+              <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+            </div>
+        </footer>
+    </body>
+</html>

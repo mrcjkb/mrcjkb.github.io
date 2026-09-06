@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>mrcjkb.dev - A modern approach to tree-sitter parsers in Neovim</title>
+        <link rel="stylesheet" href="../css/default.css" />
+        <link rel="stylesheet" href="../css/syntax.css" />
+    </head>
+    <body>
+        <header>
+            <div class="container">
+              <div class="logo">
+                  <a href="../">mrcjkb.dev</a>
+              </div>
+              <nav>
+                  <a href="../">Home</a>
+                  <a href="../about.html">About</a>
+                  <a href="../contact.html">Contact</a>
+                  <a href="../cv.html">CV</a>
+                  <a href="../archive.html">Archive</a>
+                  <a href="../rss.xml">RSS feed</a>
+                  <a href="../atom.xml">Atom feed</a>
+              </nav>
+            </div>
+        </header>
+
+        <main role="main">
+            <div class="container">
+              <h1>A modern approach to tree-sitter parsers in Neovim</h1>
+              <article>
+    <section class="header">
+        Posted on July 28, 2024
+        
+    </section>
+    <section>
+        <p>One and a half years ago, I published <a href="https://mrcjkb.dev/posts/2023-01-10-luarocks-tag-release.html">a post</a>
+with a call to action to publish Neovim plugins to luarocks.
+Since then, a lot has happened.</p>
+<p>The <a href="https://github.com/nvim-neorocks">nvim-neorocks</a> organisation has grown
+and produced <a href="https://github.com/nvim-neorocks/rocks.nvim">rocks.nvim</a>, which pioneers
+luarocks support in Neovim, treating luarocks packages as first-class citizens.
+A lot of plugins are now available on luarocks.org, and publishing plugins that aren’t
+yet available <a href="https://github.com/nvim-neorocks/rocks.nvim/wiki/Plugin-support">has never been easier</a>.</p>
+<p>I’d like to take some time to provide an update on some recent developments…</p>
+<h2 id="the-path-to-nvim-treesitter-1.0">The path to nvim-treesitter 1.0</h2>
+<p>One of my favourite things about Neovim is how easy it is to do exceptionally cool things with
+<a href="https://tree-sitter.github.io/tree-sitter/">tree-sitter</a>.
+For those new to the concept, tree-sitter is a parsing library that can be used to provide
+fast and accurate syntax highlighting, code navigation, and much more.</p>
+<p>My <a href="https://github.com/mrcjkb/neotest-haskell">very first Neovim plugin</a> was
+a Haskell adapter for <a href="https://github.com/nvim-neotest/neotest">neotest</a>, which uses
+tree-sitter queries to interact with test suites within Neovim, providing diagnostics
+for tests, among other things.</p>
+<p>However, even though <a href="https://github.com/nvim-treesitter/nvim-treesitter">nvim-treesitter</a>
+has been around <a href="https://github.com/nvim-treesitter/nvim-treesitter/graphs/code-frequency">since early 2020</a>,
+as of writing this post, its readme still has the following notice:</p>
+<blockquote>
+<p><strong>Warning: Treesitter and nvim-treesitter highlighting are an experimental feature of Neovim.
+Please consider the experience with this plug-in as experimental until Tree-Sitter support in Neovim is stable!</strong></p>
+</blockquote>
+<h3 id="a-roadmap-to-stability">A roadmap to stability</h3>
+<p>Over the past year, development has accelerated, and there now exists
+<a href="https://github.com/nvim-treesitter/nvim-treesitter/issues/4767">a roadmap for a stable version 1.0</a>.</p>
+<p>The plugin is being rewritten<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> to completely drop the module framework.</p>
+<p>Instead, it will only manage parser and query installations.
+This means that when you install nvim-treesitter 1.0, you won’t have any queries on the runtimepath
+unless you install a matching parser.
+Many plugins that used to depend on the legacy module system are now standalone plugins,
+requiring only the parsers.</p>
+<h3 id="practical-example">Practical example</h3>
+<p>Typically, a plugin that depends on a tree-sitter parser will indicate its dependency on
+nvim-treesitter in its documentation.
+For instance, here are <a href="https://github.com/MeanderingProgrammer/markdown.nvim/tree/35f8bd24809e21219c66e2a58f1b9f5d547cc2c3?tab=readme-ov-file#lazynvim">the lazy.nvim install instructions</a>
+for markdown.nvim:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">'MeanderingProgrammer/markdown.nvim'</span><span class="op">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="va">main</span> <span class="op">=</span> <span class="st">&quot;render-markdown&quot;</span><span class="op">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="va">opts</span> <span class="op">=</span> <span class="op">{},</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="va">name</span> <span class="op">=</span> <span class="st">'render-markdown'</span><span class="op">,</span> <span class="co">-- Only needed if you have another plugin named markdown.nvim</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="va">dependencies</span> <span class="op">=</span> <span class="op">{</span> <span class="st">'nvim-treesitter/nvim-treesitter'</span><span class="op">,</span> <span class="st">'nvim-tree/nvim-web-devicons'</span> <span class="op">},</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>Interestingly, this plugin doesn’t actually depend on nvim-treesitter.
+Did you know that you don’t even need nvim-treesitter to install parsers?</p>
+<h2 id="a-quick-dive-into-tsinstall">A quick dive into <code>:TSInstall</code></h2>
+<p>Let’s take a look at how nvim-treesitter manages parsers and queries.
+On the <code>master</code> branch, which still has the legacy module system, queries for basic
+functionality, such as highlights (+ injections), folds, indents, are present on the runtimepath,
+in nvim-treesitter’s <code>queries/&lt;lang&gt;</code><a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> directory.</p>
+<p>As mentioned earlier, this will change with version 1.0 (and you can test-drive it today
+with Neovim nightly on the <code>main</code> branch).
+Queries will be in a <code>runtime/queries</code> directory, so they won’t be added to the runtimepath
+until you install the parser.
+The plugin locks compatible parser revisions in a <a href="https://github.com/nvim-treesitter/nvim-treesitter/blob/master/lockfile.json"><code>lockfile.json</code></a>.
+And the nvim-treesitter CI only updates a parser’s revision if the automated tests
+for the matching queries don’t break.
+This minimises the risk that queries stop working when you update nvim-treesitter and the
+installed parsers.
+Of course, the effectiveness for any given parser depends on how well its queries are tested.</p>
+<p>When installing a parser, nvim-treesitter delegates to <a href="https://github.com/tree-sitter/tree-sitter/blob/master/cli/README.md"><code>tree-sitter-cli</code></a>,
+which may in turn delegate to a C compiler.
+Some parsers need to be generated from a <code>grammar.js</code> file, which requires Node.js.</p>
+<p>With much of the heavy lifting having recently been moved from nvim-treesitter to
+<code>tree-sitter-cli</code>, installing parsers has become a lot less error-prone.</p>
+<p>However, setting up the correct toolchain <a href="https://github.com/nvim-treesitter/nvim-treesitter/wiki/Windows-support">can still be a PITA on some platforms</a>.</p>
+<p>And there’s one pain point that cannot be solved by keeping track of compatible parsers
+in a lockfile…</p>
+<h2 id="challenges-with-downstream-plugin-compatibility">Challenges with downstream plugin compatibility</h2>
+<p>In March 2024, the tree-sitter-haskell parser underwent a complete rewrite.
+This significant update brought many improvements
+but also broke compatibility with several downstream plugins, including:</p>
+<ul>
+<li><a href="https://github.com/nvim-treesitter/nvim-treesitter/pull/6580">nvim-treesitter</a></li>
+<li><a href="https://github.com/mrcjkb/neotest-haskell/pull/162">neotest-haskell</a></li>
+<li><a href="https://github.com/mrcjkb/haskell-snippets.nvim/pull/27">haskell-snippets.nvim</a></li>
+<li><a href="https://github.com/andymass/vim-matchup/pull/349">vim-matchup</a></li>
+<li><a href="https://github.com/mizlan/iswap.nvim/pull/89">iswap.nvim</a></li>
+<li><a href="https://gitlab.com/HiPhish/rainbow-delimiters.nvim/-/commit/a0e715996c93187290c00d494d58e11d5f5e43ad">rainbow-delimiters.nvim</a></li>
+<li><a href="https://github.com/kiyoon/haskell-scope-highlighting.nvim/pull/3">haskell-scope-highlighting.nvim</a></li>
+<li><a href="https://github.com/nvim-treesitter/nvim-treesitter-context/pull/447">nvim-treesitter-context</a></li>
+<li><a href="https://github.com/nvim-treesitter/nvim-treesitter-textobjects/pull/613">nvim-treesitter-textobjects</a></li>
+<li><a href="https://github.com/laytan/tailwind-sorter.nvim/pull/104">tailwind-sorter.nvim</a></li>
+</ul>
+<p>Synchronizing updates across all these plugins to ensure a seamless transition for users
+is nearly impossible, especially given the limited number of maintainers for these queries.</p>
+<h3 id="immediate-impact-on-users">Immediate impact on users</h3>
+<p>Until all downstream plugins have been updated, affected users are left with two primary options:</p>
+<ul>
+<li><strong>Pinning nvim-treesitter:</strong>
+Users can pin nvim-treesitter to a version or revision that installs the old version of the parser.
+Unfortunately, this workaround means they cannot benefit from any other parser updates or fixes.
+Consequently, users may have to pin plugins that depend on other parsers,
+delaying overall ecosystem improvements.</li>
+<li><strong>Disabling plugins:</strong>
+This approach ensures users can still receive updates for other parts of their setup
+but at the cost of losing functionality provided by the disabled plugins.</li>
+</ul>
+<p>Wouldn’t it be neat if you could pin parsers individually?</p>
+<h2 id="enter-rocks.nvim">Enter rocks.nvim</h2>
+<p>For a while, we (the nvim-neorocks team) have been using
+<a href="https://github.com/nvim-neorocks/nurr">the Neovim User Rock Repository (NURR)</a> to
+automatically package many Neovim plugins for <a href="https://luarocks.org">luarocks</a>,
+to be used with rocks.nvim.</p>
+<p>Aside from workflows that publish Neovim plugins, we’ve also added a workflow that
+publishes tree-sitter parsers, bundled with the matching nvim-treesitter queries, to luarocks.org.
+To top it off, our <a href="https://nvim-neorocks.github.io/rocks-binaries/">rocks-binaries</a>
+project periodically pre-builds the parsers on Linux, macOS (x86_64 + aarch64) and Windows,
+so that rocks.nvim users on those platforms don’t have to worry
+about installing any additional toolchains.</p>
+<p>Recently, we’ve started publishing the parsers to the root manifest with <code>0.0.x</code> versions<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>,
+where <code>x</code> increments every time the revision changes in the nvim-treesitter lockfile, or
+whenever the parser’s queries are modified<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a>.</p>
+<p>With luarocks packages as first-class citizens in Neovim,
+this allows plugin authors to add parsers as dependencies to their luarocks packages
+and has a neat side effect: rocks.nvim users can now pin each parser individually.</p>
+<p>Welcome to a new era of flexibility and stability!</p>
+<blockquote>
+<p><strong>IMPORTANT</strong></p>
+<p>If you use rocks.nvim and run into issues with tree-sitter parsers,
+please bug us, not the nvim-treesitter maintainers!
+We provide a <a href="https://github.com/nvim-neorocks/rocks-treesitter.nvim">rocks-treesitter.nvim</a>
+module for highlighting and auto-installing parsers, as well
+as a <a href="https://luarocks.org/modules/neorocks/nvim-treesitter-legacy-api">nvim-treesitter-legacy-api</a>
+rock that provides the module systems for plugins that still depend on it,
+without adding queries that could be out-of-sync with the luarocks parsers to the runtimepath.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note for plugin authors</strong></p>
+<p>While luarocks supports loading multiple versions
+of the same lua dependency, this does not translate
+to tree-sitter parsers.
+Neovim will use the first parser it finds on the runtimepath.
+For this reason, we currently don’t recommend that plugin authors
+pin parser dependencies. You should leave that up to your users for now.</p>
+</blockquote>
+<section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p>As of writing, the nvim-treesitter 1.0 roadmap is subject to change.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p><code>&lt;lang&gt;</code> is the name of the matching parser.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>We don’t know yet if/how nvim-treesitter will handle parser versioning if/when it
+goes stable. <code>0.0.x</code> seems like a safe bet.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p>Checked using the git log every 12 hours.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+    </section>
+</article>
+
+            </div>
+        </main>
+
+        <footer>
+            <div class="container">
+              Site proudly generated by
+              <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+            </div>
+        </footer>
+    </body>
+</html>

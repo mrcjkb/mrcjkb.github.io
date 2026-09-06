@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>mrcjkb.dev - Rethinking the `setup` convention in Neovim. Is it time for a paradigm shift?</title>
+        <link rel="stylesheet" href="../css/default.css" />
+        <link rel="stylesheet" href="../css/syntax.css" />
+    </head>
+    <body>
+        <header>
+            <div class="container">
+              <div class="logo">
+                  <a href="../">mrcjkb.dev</a>
+              </div>
+              <nav>
+                  <a href="../">Home</a>
+                  <a href="../about.html">About</a>
+                  <a href="../contact.html">Contact</a>
+                  <a href="../cv.html">CV</a>
+                  <a href="../archive.html">Archive</a>
+                  <a href="../rss.xml">RSS feed</a>
+                  <a href="../atom.xml">Atom feed</a>
+              </nav>
+            </div>
+        </header>
+
+        <main role="main">
+            <div class="container">
+              <h1>Rethinking the `setup` convention in Neovim. Is it time for a paradigm shift?</h1>
+              <article>
+    <section class="header">
+        Posted on August 22, 2023
+        
+    </section>
+    <section>
+        <p>In the ever-evolving Neovim plugin ecosystem, the usage and appropriateness of a <code>setup</code> function
+for initializing plugins has become somewhat a hot topic.
+This discussion has sparked differing opinions among plugin developers.</p>
+<p>Like some other plugin authors, I’ve recently found myself reverting back to the more traditional
+Vim convention of employing <code>vim.g.&lt;namespaced_table&gt;</code> or <code>vim.g.&lt;namespaced_option&gt;</code>
+for configuration, and leaning on the inherent mechanisms of Neovim for initialization.</p>
+<p>In this post, I aim to unpack my perspective on this debate,
+considering both the present landscape and the potential trajectory of the Neovim plugin ecosystem.</p>
+<h2 id="drawing-parallels-the-design-journey-of-my-first-neovim-plugin">Drawing parallels: The design journey of my first Neovim plugin</h2>
+<p>While <a href="https://github.com/mrcjkb/haskell-tools.nvim/"><code>haskell-tools.nvim</code></a> wasn’t technically my first
+Neovim plugin, it holds the distinction of being the first that wasn’t merely an adapter or extension
+for another.
+If the name resonates with you, it’s likely because I drew inspiration from the popular
+<a href="https://github.com/simrat39/rust-tools.nvim"><code>rust-tools.nvim</code></a>.
+Both plugins, though tailored for different programming languages, share a parallel purpose.</p>
+<p><code>rust-tools</code>, for historical reasons, depends on <code>nvim-lspconfig</code>.
+It relies on a <code>setup</code> function to kickstart the <code>lspconfig.rust_analyzer.setup</code>, among other things.
+As I was relatively new to Lua and Neovim plugin development, this structure felt like a logical
+blueprint for <code>haskell-tools</code>.
+Which led to <a href="https://github.com/mrcjkb/haskell-tools.nvim/blob/3ac5c19a0742cc80c65bab9525ac3e7a9c54ab93/lua/haskell-tools/init.lua">this module</a>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">local</span> <span class="cn">M</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="va">config</span> <span class="op">=</span> <span class="kw">nil</span><span class="op">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="va">lsp</span> <span class="op">=</span> <span class="kw">nil</span><span class="op">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="va">hoogle</span> <span class="op">=</span> <span class="kw">nil</span><span class="op">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="va">repl</span> <span class="op">=</span> <span class="kw">nil</span><span class="op">,</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="cn">M</span><span class="op">.</span>setup<span class="op">(</span><span class="va">opts</span><span class="op">)</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- initialization omitted for brevity</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> <span class="cn">M</span></span></code></pre></div>
+<p>As a Haskell developer, seeing state - initialized with <code>nil</code> - was profoundly unsettling.
+Despite my reservations, the <code>setup</code> paradigm was omnipresent in most Lua plugins I was using.
+So I decided to go along with it. This, as <a href="https://gitlab.com/HiPhish/rainbow-delimiters.nvim/-/blob/7506a7d6/doc/rainbow-delimiters.txt?ref_type=heads#L150"><strong><span class="citation" data-cites="HiPhish">@HiPhish</span></strong> puts it very well</a>,
+was <a href="http://www.jargon.net/jargonfile/c/cargocultprogramming.html">cargo cult programming</a>.</p>
+<h2 id="tracing-the-origins-of-setup">Tracing the origins of <code>setup</code></h2>
+<p>Neovim embraced Lua as a first-class citizen <a href="https://neovim.io/news/2021/07">with version <code>0.5</code></a>.
+Though the initial API wasn’t as powerful as the one we enjoy today,
+it marked the onset of an explosive growth in Lua plugins.
+However, the roots of the <code>setup</code> pattern trace back even earlier. Neovim contributor <a href="https://github.com/norcalli/neovim-plugin"><strong><span class="citation" data-cites="norcalli">@norcalli</span></strong>
+introduced a library designed “to standardize the creation of Lua based plugins in Neovim.”</a>,
+almost a year before Lua’s elevated status<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>.</p>
+<p>From this effort, <code>setup</code> was born:</p>
+<blockquote>
+<ul>
+<li>Plugins shouldn’t use the api unless the user explicitly asks them to by calling a function.
+<ul>
+<li>For one time initialization for a plugin, this is achieved by having a <code>setup()</code> function
+which will do any initialization required unrelated to key mappings, commands, and events.</li>
+<li>Every other call should be encapsulated by functions exported by the plugin.</li>
+</ul></li>
+</ul>
+</blockquote>
+<p>Observant readers may notice a subtle difference between the foundational approach and the
+conventions that are prevalent today.
+In <strong><span class="citation" data-cites="norcalli">@norcalli</span></strong>’s blueprint, <a href="https://github.com/norcalli/neovim-plugin/blob/master/examples/test.lua">configuration and initialization were decoupled</a>,
+with an <code>export</code> function designated for configuration and <code>setup</code> exclusively managing initialization.
+In contrast, many of today’s plugins meld these two by passing a configuration table directly to <code>setup</code>.
+We will revisit this later on…</p>
+<h2 id="neovim-0.7---lua-everywhere">Neovim 0.7 - Lua everywhere!</h2>
+<p>Remember, this <code>setup</code> concept originated before Lua’s deep integration in Neovim.
+Well before <code>init.lua</code> and auto-loading Lua files on the <a href="https://neovim.io/doc/user/options.html#" title="runtimepath"><code>runtimepath</code></a>
+arrived with <a href="https://neovim.io/news/2022/04">version 0.7</a>.
+This version brought with it many improvements to the Lua API.
+And it was a few months after the release of Neovim 0.7 that <a href="https://zignar.net/2022/11/06/structuring-neovim-lua-plugins/#require-performance"><strong><span class="citation" data-cites="mfussenegger">@mfussenegger</span></strong> posted
+an article</a>
+which made me realise I had stuctured my <code>haskell-tools</code> plugin wrong.</p>
+<p>His article (which I strongly recommend reading) differentiates between global and filetype-specific plugins.
+For Lua plugins, he presents some advantages and disadvantages of various structuring approaches
+and two configuration methods:</p>
+<ul>
+<li>A <code>setup</code> function, which is “useful if the plugin performs expensive initialization or if
+what it initializes depends on the configuration”, but forces users to <code>require</code> the plugin,
+which may impact startup if not managed properly.</li>
+<li>A single global configuration table, like <code>vim.g.foobar_settings</code>, which omits the
+need for a <code>require</code>, and provides direct access across multiple modules, but may be harder to
+validate.</li>
+</ul>
+<h2 id="haskell-tools-redesigned"><code>haskell-tools</code> redesigned</h2>
+<p>Continuing the trajectory of Neovim 0.7’s advancements, <a href="https://neovim.io/news/2022/04#filetypelua"><code>filetype.lua</code></a>,
+emerged as a notable (experimental) addition. By the time Neovim 0.9 rolled around,
+it had effectively replaced the older <code>filetype.vim</code>.
+Initially, <code>haskell-tools.setup</code> employed autocommands for Haskell and Cabal files.
+This approach could bog down startup times, especially if multiple plugins adopted it.
+Addressing this, I rolled out the <code>start_or_attach</code> function for more efficient initialization,
+tailored for lazy invocation within users’ <code>after/ftplugin/&lt;haskell|cabal&gt;.lua</code> scripts.
+This shift also severed the plugin’s tie to <code>nvim-lspconfig</code> for LSP tasks.
+But, in a nod to <a href="https://www.snoyman.com/blog/2018/04/stop-breaking-compatibility/">backward compatibility</a>,
+the original <code>setup</code> function remained, bringing along its inherent codebase intricacies.</p>
+<p>After recent consideration, I have finally decided to release version 2 of <code>haskell-tools.nvim</code>.</p>
+<h2 id="the-pitfalls-of-setup">The pitfalls of <code>setup</code></h2>
+<p><span class="citation" data-cites="mfussenegger">@mfussenegger</span> clarifies in his article that he does not advocate against a <code>setup</code> function.
+While I think his article is a great read, I have personally come to the conclusion that
+<code>setup</code> as we know it must burn. Here’s why…</p>
+<p><img src="https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/fd85e99a-4dac-4f3d-88f7-83f6246a1a62" width="550" /></p>
+<h3 id="a-false-sense-of-consistency">A false sense of “consistency”</h3>
+<p>The most common argument I hear in favour of defaulting to <code>setup</code> is “consistency”. In fact,
+today’s most popular Lua plugin manager, <a href="https://github.com/folke/lazy.nvim#-plugin-spec"><code>lazy.nvim</code>, defaults to
+calling <code>require(MAIN).setup(opts)</code></a>
+in the absence of a <code>config</code> option.
+But as we’ve delved into before, the term “setup” is used ambiguously across plugins.
+For instance, while plugins like <code>nvim-treesitter</code> and <code>telescope.nvim</code> lean on Neovim’s inherent
+initialization and employ <code>setup</code> solely for configuration,
+others like <code>nvim-cmp</code> and <code>nvim-lspconfig</code> use the same term for both roles.
+This facade of uniform naming masks its varied functionalities, leading to false consistency.</p>
+<p>Furthermore, global configuration variables or tables, prefixed with a namespace specific to the plugin,
+are both consistent and compatible with Vimscript<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>.</p>
+<p><img src="https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/2de0fa4f-adec-45c9-862d-78756c444bae" width="550" /></p>
+<h3 id="the-mirage-of-setup-driven-expectations">The mirage of <code>setup</code>-driven expectations</h3>
+<p>The <code>setup</code> convention in Neovim plugins has inadvertently set certain expectations among users.
+A notable interaction I had with a user when I decided to remove it from <code>haskell-tools.nvim</code> showcased this:
+the absence of a familiar <code>setup</code> function made the configuration feel “strange” and “out of place” to them.
+Further, they worried it would prevent them from conditionally loading or initializing the plugin.</p>
+<p>This sentiment points to a broader issue.
+The prevalent use of the <code>setup</code> function has conditioned users to expect it as a standard
+for configuring and initializing plugins.
+This expectation can overshadow alternative, and sometimes more flexible, configuration methods.</p>
+<p>Neovim itself offers <a href="https://neovim.io/doc/user/repeat.html#packages">built-in mechanisms for conditional plugin loading</a>,
+and many plugin managers support similar functionalities.
+However, the ubiquity of the <code>setup</code> convention might be inadvertently limiting our view and adaptability,
+leading us to perceive deviations as anomalies, even when they may offer superior flexibility.</p>
+<h3 id="require-ing-plugins-at-startup-can-break-your-config"><code>require</code>-ing plugins at startup can break your config</h3>
+<p>To create robust plugins, it’s imperative to differentiate between configuration and initialization.
+This becomes particularly crucial when plugins have interdependencies.
+Careless <code>require</code> calls during the configuration phase can induce unexpected hiccups,
+primarily influenced by the order of initialization.
+The best practice? Make such calls deferred or lazy.</p>
+<p>Let’s illustrate with an example:</p>
+<h4 id="not-ideal">Not ideal</h4>
+<div class="sourceCode" id="cb2"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- May fail if foo is not initialized</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">-- before lspconfig</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">local</span> <span class="va">bar</span> <span class="op">=</span> <span class="fu">require</span><span class="op">(</span><span class="st">'foo'</span><span class="op">).</span><span class="va">bar</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">require</span><span class="op">(</span><span class="st">'lspconfig'</span><span class="op">).</span><span class="va">clangd</span><span class="op">.</span>setup <span class="op">{</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="va">on_attach</span> <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="cn">_</span><span class="op">)</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="va">bar</span><span class="op">.</span>do_something<span class="op">()</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">end</span><span class="op">,</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h4 id="better">Better</h4>
+<div class="sourceCode" id="cb3"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">require</span><span class="op">(</span><span class="st">'lspconfig'</span><span class="op">).</span><span class="va">clangd</span><span class="op">.</span>setup <span class="op">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="va">on_attach</span> <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="cn">_</span><span class="op">)</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- Will fail only if foo is never initialized</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">require</span><span class="op">(</span><span class="st">'foo'</span><span class="op">).</span><span class="va">bar</span><span class="op">.</span>do_something<span class="op">()</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">end</span><span class="op">,</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>Now, imagine a scenario where <code>nvim-lspconfig</code> isn’t even present or loaded
+(e.g. when using a single configuration on multiple devices with different
+sets of plugins).
+Neovim’s startup would choke on <code>require('lspconfig')</code>,
+halting further configurations even if the plugin isn’t immediately required.</p>
+<p>However, if <code>nvim-lspconfig</code> leveraged <code>filetype.lua</code> and <code>vim.g</code>, things would look different:</p>
+<ul>
+<li>Configuration snippet:</li>
+</ul>
+<div class="sourceCode" id="cb4"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="va">vim</span><span class="op">.</span><span class="va">g</span><span class="op">.</span><span class="va">lspconfig</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="va">clangd</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="va">filetypes</span> <span class="op">=</span> <span class="op">{</span><span class="st">'c'</span><span class="op">,</span> <span class="st">'cpp'</span><span class="op">},</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- additional settings...</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<ul>
+<li>The initialization script (orchestrated by the plugin, not the user):</li>
+</ul>
+<div class="sourceCode" id="cb5"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- ftplugin/c.lua</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="kw">local</span> <span class="va">clangd</span> <span class="op">=</span> <span class="va">vim</span><span class="op">.</span><span class="va">g</span><span class="op">.</span><span class="va">lspconfig</span> <span class="kw">and</span> <span class="va">vim</span><span class="op">.</span><span class="va">g</span><span class="op">.</span><span class="va">lspconfig</span><span class="op">.</span><span class="va">clangd</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="va">clangd</span><span class="op">.</span><span class="va">filetypes</span> <span class="kw">and</span> <span class="va">vim</span><span class="op">.</span>tbl_contains<span class="op">(</span><span class="va">clangd</span><span class="op">.</span><span class="va">filetypes</span><span class="op">,</span> <span class="st">'c'</span><span class="op">)</span> <span class="cf">then</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- config validations and clangd initialization performed and cached in 'lspconfig.cache.clangd'</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">require</span><span class="op">(</span><span class="st">'lspconfig.cache.clangd'</span><span class="op">)</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">require</span><span class="op">(</span><span class="st">'lspconfig.configs'</span><span class="op">).</span><span class="va">clangd</span><span class="op">.</span>launch<span class="op">()</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="cf">end</span></span></code></pre></div>
+<p>In such a setup, Neovim doesn’t break a sweat,
+even if <code>nvim-lspconfig</code> remains unloaded when <code>init.lua</code> processes <code>vim.g.lspconfig.clangd</code>.</p>
+<h3 id="automatic-dependency-managements-achilles-heel">Automatic dependency management’s Achilles’ Heel</h3>
+<p>Efforts to resolve <a href="https://mrcjkb.dev/posts/2023-01-10-luarocks-tag-release.html">pain points</a>
+in Neovim’s plugin ecosystem have gravitated towards automatic dependency management.</p>
+<p>Two notable initiatives<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a> are:</p>
+<ul>
+<li><a href="https://luarocks.org/labels/neovim">Hosting plugins on LuaRocks.org</a>
+and <a href="https://github.com/ntbbloodbath/rocks.nvim">installing them with <code>luarocks</code></a>.</li>
+<li><a href="https://packspec.org/spec.html">The <code>pkg.json</code> (<code>packspec</code>) format specification</a>
+for plugin metadata and dependencies.</li>
+</ul>
+<p>Given Vim’s architecture (and by extension Neovim’s), there’s a specific <a href="https://neovim.io/doc/user/starting.html#initialization">initialization order</a>
+where user preferences load before plugins. Ring a bell?</p>
+<p>A lurking issue arises when plugins blend their configuration and initialization phases in one
+<code>setup</code> function.
+By doing this and handing over the initialization reins to the user,
+the core advantages of automatic dependency management risk getting undermined.</p>
+<p><img src="https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/898f9b14-9608-4314-a671-62d81008473b" width="500" /></p>
+<p>It should be a plugin’s duty to articulate its dependencies rather than leaving it to users or plugin managers.
+In the same spirit, plugins should defer their own initialization until all their dependencies are up and running.</p>
+<p>Take a look at <a href="https://github.com/folke/neodev.nvim/tree/v2.5.2#-setup">this snippet from <code>neodev.nvim</code>’s</a><a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a> README:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- IMPORTANT: make sure to setup neodev BEFORE lspconfig</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">require</span><span class="op">(</span><span class="st">&quot;neodev&quot;</span><span class="op">).</span>setup<span class="op">({</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- add any options here, or leave empty to use the default settings</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="op">})</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co">-- then setup your lsp server as usual</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="kw">local</span> <span class="va">lspconfig</span> <span class="op">=</span> <span class="fu">require</span><span class="op">(</span><span class="st">'lspconfig'</span><span class="op">)</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="co">-- example to setup lua_ls and enable call snippets</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="va">lspconfig</span><span class="op">.</span><span class="va">lua_ls</span><span class="op">.</span>setup<span class="op">({</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  <span class="va">settings</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    <span class="va">Lua</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>      <span class="va">completion</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">callSnippet</span> <span class="op">=</span> <span class="st">&quot;Replace&quot;</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>      <span class="op">}</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="op">})</span></span></code></pre></div>
+<p>Highlighting this, had there been a distinct line between configuration and initialization responsibilities,
+warnings like these wouldn’t be necessary.</p>
+<h3 id="safeguarding-initialization-in-dynamic-environments">Safeguarding initialization in dynamic environments</h3>
+<p>If you’re like me, and <a href="https://mrcjkb.dev/posts/2023-08-17-lua-adts.html">rely heavily on static type checking</a>
+to fortify your code base, you’ll appreciate the confidence in not worrying about whether parts of your plugin
+are properly initialized.</p>
+<p>Recall how I hinted at the beginning of this post that <code>nil</code> is evil?
+Consider this example from <a href="https://github.com/gbprod/yanky.nvim">a plugin I use</a>,
+which features a <a href="https://github.com/nvim-telescope/telescope.nvim/wiki/Extensions"><code>telescope.nvim</code> extension</a>.
+From a configuration standpoint, the typical way to add a Telescope extension looks something like this:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">require</span><span class="op">(</span><span class="st">'telescope'</span><span class="op">).</span>load_extension<span class="op">(</span><span class="st">'yank_history'</span><span class="op">)</span></span></code></pre></div>
+<p>Now, this is what happens if a user tries to invoke <code>:Telescope yank_history</code> before calling <code>require('yanky').setup()</code>:</p>
+<p><img src="https://github.com/mrcjkb/mrcjkb.github.io/assets/12857160/d8d32e26-a6a6-48f5-b8ba-d3ed0c5707c9" width="550" /></p>
+<p>If <code>setup</code> has side-effects, it puts plugin authors in a tricky spot: They cannot confidently delegate
+control to users and simultaneously ensure that every component initializes when needed.</p>
+<p>This issue illustrates a broader challenge: without type safety or strict initialization processes,
+we run into unpredictable behaviors. While dynamic languages like Lua offer flexibility,
+they also introduce the potential for such oversights, especially when initialization processes
+are handed over to the end-users.</p>
+<h3 id="what-about-namespace-clashes-and-clutter">What about namespace clashes and clutter?</h3>
+<p>The traditional way in Vimscript was to have a <code>vim.g.&lt;some_option&gt;</code> for each configuration option,
+typically prefixed with the plugin name, to avoid namespace clashes.
+This can introduce a lot of clutter. Fortunately, in Lua, <code>vim.g.foo_bar</code> can also be a single table (or a function that returns a table),
+which is no more likely to clash than a module name.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Instead of:</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="va">vim</span><span class="op">.</span><span class="va">g</span><span class="op">.</span><span class="va">plugin_name_option1</span> <span class="op">=</span> <span class="st">&quot;value1&quot;</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="va">vim</span><span class="op">.</span><span class="va">g</span><span class="op">.</span><span class="va">plugin_name_option2</span> <span class="op">=</span> <span class="st">&quot;value2&quot;</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="va">vim</span><span class="op">.</span><span class="va">g</span><span class="op">.</span><span class="va">plugin_name_option3</span> <span class="op">=</span> <span class="st">&quot;value3&quot;</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="co">-- We can have:</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="va">vim</span><span class="op">.</span><span class="va">g</span><span class="op">.</span><span class="va">plugin_name</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="va">option1</span> <span class="op">=</span> <span class="st">&quot;value1&quot;</span><span class="op">,</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="va">option2</span> <span class="op">=</span> <span class="st">&quot;value2&quot;</span><span class="op">,</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="va">option3</span> <span class="op">=</span> <span class="st">&quot;value3&quot;</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>This approach keeps the global namespace clean and reduces the chances of clashes.</p>
+<h3 id="what-about-a-configure-function">What about a <code>configure</code> function?</h3>
+<p>While there’s no inherent issue with a <code>configure</code> function (or even a <code>setup</code> function solely
+dedicated to configuration), its use can indeed simplify the validation of user configurations.</p>
+<p>So, why do I caution against its adoption?</p>
+<p>Remember the evolution of <span class="citation" data-cites="norcalli">@norcalli</span>’s <code>export</code>/<code>setup</code> pattern into a unified function?
+The crux of the matter lies in the fact that Lua functions can be inherently impure.
+This means there’s nothing stopping plugin developers from crafting their <code>configure</code> functions
+in less than ideal ways, such as:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="cn">M</span><span class="op">.</span>configure<span class="op">(</span><span class="va">opts</span><span class="op">)</span> <span class="op">=</span> <span class="kw">function</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- &lt;do something with opts&gt;</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="va">vim</span><span class="op">.</span><span class="va">api</span><span class="op">.</span>nvim_launch_nuclear_warhead<span class="op">()</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
+<p>On the other hand, employing a <code>vim.g</code> variable offers an implicit assurance of its singular role
+in configuration.
+While this might introduce complexity in validating configurations, Neovim offers a robust solution:
+the <a href="https://neovim.io/doc/user/pi_health.html#health-dev"><code>:checkhealth</code></a> mechanism.
+For an illustration of its effective utilization, <a href="https://github.com/mrcjkb/haskell-tools.nvim/blob/2e06bf7fb458356913f1fc7961f1d3c21c7163a1/lua/haskell-tools/health.lua#L225">see this example</a>
+from my <code>haskell-tools.nvim</code> plugin.</p>
+<h3 id="but-global-variables-are-an-antipattern">But… Global variables are an antipattern?</h3>
+<p>Yes and no. Using global <strong>mutable</strong> state is frowned upon as an antipattern.
+However, we are discussing global <em>configuration tables which we only read from</em>.
+It’s common knowledge among developers, even those with little experience, that mutating global variables is a bad idea.
+Yet, it’s surprising how many seasoned developers overlook the importance of isolating side-effects.</p>
+<h2 id="enter-a-world-without-setup">Enter a world without <code>setup</code></h2>
+<p>In light of these considerations, it is increasingly clear that the Neovim community may benefit
+from moving beyond the <code>setup</code> function, or at least the way it’s been traditionally employed.
+The <code>setup</code> function, as it stands today, isn’t the villain.
+However, the consequences of its misuse, ambiguity, and lack of clear separation of concerns in
+many plugins are real issues that need addressing.</p>
+<h3 id="so-what-should-the-ideal-look-like">So, what should the ideal look like?</h3>
+<ol type="1">
+<li><p><strong>Decoupled Configuration and Initialization</strong>:
+This has been reiterated multiple times,
+but it’s worth emphasizing. Configuration should be separated from initialization.
+This ensures that configuration is pure, readable, and unlikely to produce unexpected side effects.</p></li>
+<li><p><strong>Utilize <code>vim.g</code> for Configuration</strong>:
+As has been demonstrated, <code>vim.g</code> provides an ideal means to store plugin configuration.
+It aligns well with Vim conventions, provides an implicit assurance of its configuration-only role,
+and circumvents the need to <code>require</code> the plugin at startup.</p></li>
+<li><p><strong>Smart Initialization</strong>:
+Instead of relying on users or external mechanisms for activation,
+tools should employ intelligent self-initialization.
+For example, leveraging constructs like <code>filetype.lua</code> can defer their loading until genuinely required.
+However, for plugins with minimal startup footprints, lazy loading might be excessive.
+For plugins like <code>telescope.nvim</code> and <code>nvim-cmp</code> that support extensions, it would be nifty if
+Neovim provided a specification akin to <code>:h runtimepath</code>, so that extensions could register
+themselves automatically.
+Something along the lines of <code>extension/&lt;plugin&gt;/register.lua</code><a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a>, which plugins could source
+at runtime.</p></li>
+<li><p><strong>Explicit Dependency Declaration</strong>:
+Plugins should clearly specify any dependencies,
+and the initialization of such plugins should ensure that these dependencies are loaded before proceeding.</p></li>
+</ol>
+<h3 id="some-caveats">Some caveats</h3>
+<p>No approach is without its drawbacks. Some possible criticisms of moving away from <code>setup</code> are:</p>
+<ul>
+<li><p><strong>Learning Curve</strong>:
+This change would introduce a learning curve,
+especially for newer users who are already accustomed to the <code>setup</code> pattern.
+On the other hand, this approach discourages cargo cult programming and promotes genuine understanding.</p></li>
+<li><p><strong>Migration</strong>:
+Existing plugins that heavily rely on the <code>setup</code> pattern might need significant rewrites.
+While this is an investment in future robustness, it might be daunting for some plugin authors
+and users alike.</p></li>
+<li><p><strong>Performance</strong>:
+While unlikely, there’s always the potential for performance implications when making a sweeping change.
+However, any such implications would likely be minimal and far outweighed by the benefits.</p></li>
+<li><p><strong><code>vim.g</code> is a Vimscript/Lua bridge</strong>:
+As such, it may not be suitable for all use cases. For example, <a href="https://github.com/neovim/neovim/issues/12544#issuecomment-1116794687">metatables are erased</a><a href="#fn6" class="footnote-ref" id="fnref6" role="doc-noteref"><sup>6</sup></a>.
+Although I consider metatables excessive for plugin configuration, a dedicated Lua API might
+be needed to address such concerns.</p></li>
+</ul>
+<h3 id="update-change-isnt-chaos">[Update] Change isn’t chaos</h3>
+<p>Addressing reservations some readers have about embracing change; to draw an analogy:</p>
+<p>Just as transitioning away from fossil fuels doesn’t plunge us into perpetual darkness,
+or shifting to a more sustainable diet doesn’t lead to a world overrun by unchecked animal populations,
+the Neovim community won’t descend into chaos if we reconsider the use of <code>setup</code>.
+Change can be daunting, but it’s also a path to improvement.</p>
+<h3 id="update-some-additional-points-by-hiphish">[Update] Some additional points by <span class="citation" data-cites="HiPhish">@HiPhish</span></h3>
+<ul>
+<li><code>setup</code> locks users into Lua. Some people prefer Vimscript for configuration.</li>
+<li>Many <code>setup</code> functions do too much.
+There’s no need for inconsistent custom DSLs when Neovim already
+provides better mechanisms
+(like <a href="https://neovim.io/doc/user/usr_41.html#using-%3CPlug%3E"><code>&lt;Plug&gt;</code></a> for keymaps).</li>
+<li>A Lua function for configuration forces it all into one place.
+Maybe I want separate files for all my mappings and
+for all my custom highlight groups.</li>
+</ul>
+<h3 id="guided-migration-a-step-by-step-plan">Guided migration: A step-by-step plan</h3>
+<p>For plugin maintainers, especially those with a large user base,
+the thought of introducing breaking changes can be daunting.
+However, with a structured approach, you can ensure a smooth transition for both you and your users.
+Here’s a suggested plan to phase out the <code>setup</code> function:</p>
+<ol type="1">
+<li><p><strong>Embrace a Rigorous Release Cycle</strong>:
+Start by tagging releases with <a href="https://semver.org/">semantic versions</a> and/or maintaining a stable
+branch if you haven’t already. This provides a clear framework for introducing changes.</p></li>
+<li><p><strong>Prioritize Separation of Concerns</strong>:
+If your plugin conflates configuration and initialization in a single function,
+consider splitting these concerns.
+Initially, transition to a <code>setup</code> function dedicated only to configuration while optimizing initialization.
+This change is unlikely to disrupt most users.</p></li>
+<li><p><strong>Support Both APIs Temporarily</strong>:
+By concurrently supporting both the old and new APIs, you provide users with a transition period.
+Consider implementing prompts (with an option to disable them) to guide users towards the new method.</p></li>
+<li><p><strong>Introduce the New API in a Separate Branch</strong>:
+Create a branch that omits the <code>setup</code> function, and actively promote this to your users.
+Encourage them to switch and provide feedback.</p></li>
+</ol>
+<h2 id="in-conclusion">In Conclusion</h2>
+<p>In the constantly evolving world of Neovim plugins, it’s important to reflect on established patterns
+and consider their effectiveness. The <code>setup</code> pattern, while helpful in certain contexts,
+has shown potential pitfalls.</p>
+<p>By championing a clear division between configuration and initialization and embracing tools like <code>vim.g</code> for the former,
+we pave the way for a more robust, predictable, and user-friendly Neovim plugin ecosystem.</p>
+<p>As developers and users of Neovim plugins, it’s up to us to guide this evolution in a direction that
+benefits the entire community. Let’s strive for clarity, simplicity, and robustness as we move forward!</p>
+<h2 id="credits">Credits</h2>
+<p>Thanks to the <a href="https://github.com/nvim-neorocks">neorocks</a> surgeons for proof-reading and input:</p>
+<ul>
+<li><a href="https://github.com/teto"><strong><span class="citation" data-cites="teto">@teto</span></strong></a></li>
+<li><a href="https://github.com/vhyrro"><strong><span class="citation" data-cites="vhyrro">@vhyrro</span></strong></a></li>
+<li><a href="https://github.com/NTBBloodbath"><strong><span class="citation" data-cites="NTBBloodbath">@NTBBloodbath</span></strong></a></li>
+<li><a href="https://github.com/vigoux"><strong><span class="citation" data-cites="vigoux">@vigoux</span></strong></a></li>
+<li><a href="https://github.com/vsedov"><strong><span class="citation" data-cites="vsedov">@vsedov</span></strong></a></li>
+</ul>
+<section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p>The credit for tracing the origins of <code>setup</code> goes to <a href="https://github.com/RRethy/vim-illuminate/issues/112#issuecomment-1221213332"><strong><span class="citation" data-cites="RRethy">@RRethy</span></strong></a>.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>Some Neovim users find Vimscript more ergonomic for configuration than Lua.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>Notably, these work in progress approaches <a href="https://github.com/nvim-neorocks/luarocks-tag-release/discussions/73#discussioncomment-6552899">are not mutually exclusive</a>.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p>For the record, I’m quite a fan of this plugin.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn5"><p>This is analogous to <code>queries/&lt;language&gt;/&lt;query-file&gt;.scm</code>.<a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn6"><p>Thanks to <a href="https://github.com/echasnovski/"><strong><span class="citation" data-cites="echanovski">@echanovski</span></strong></a> for pointing this out to me.<a href="#fnref6" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+    </section>
+</article>
+
+            </div>
+        </main>
+
+        <footer>
+            <div class="container">
+              Site proudly generated by
+              <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+            </div>
+        </footer>
+    </body>
+</html>
