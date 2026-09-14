@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>mrcjkb.dev - Test your Neovim plugins with luarocks and busted</title>
+        <link rel="stylesheet" href="../css/default.css" />
+        <link rel="stylesheet" href="../css/syntax.css" />
+    </head>
+    <body>
+        <header>
+            <div class="container">
+              <div class="logo">
+                  <a href="../">mrcjkb.dev</a>
+              </div>
+              <nav>
+                  <a href="../">Home</a>
+                  <a href="../about.html">About</a>
+                  <a href="../contact.html">Contact</a>
+                  <a href="../cv.html">CV</a>
+                  <a href="../archive.html">Archive</a>
+                  <a href="../rss.xml">RSS feed</a>
+                  <a href="../atom.xml">Atom feed</a>
+              </nav>
+            </div>
+        </header>
+
+        <main role="main">
+            <div class="container">
+              <h1>Test your Neovim plugins with luarocks and busted</h1>
+              <article>
+    <section class="header">
+        Posted on June  6, 2023
+        
+    </section>
+    <section>
+        <!-- markdownlint-disable -->
+<br />
+<div data-align="center">
+<p><a href="https://github.com/nvim-neorocks/nvim-busted-action">
+<img src="https://avatars.githubusercontent.com/u/124081866?s=400&u=0da379a468d46456477a1f68048b020cf7a99f34&v=4" alt="nvim-busted-action">
+</a></p>
+</div>
+<!-- markdownlint-restore -->
+<p>In my <a href="https://mrcjkb.dev/posts/2023-01-10-luarocks-tag-release.html">previous post</a>,
+I wrote about some pain points in the Neovim plugin ecosystem,
+and introduced the <a href="https://github.com/marketplace/actions/luarocks-tag-release">luarocks-tag-release</a>
+GitHub action, which allows you to publish your Neovim plugins to <a href="https://luarocks.org/">LuaRocks</a>,
+as a call to address those pain points.</p>
+<p>At the end, I stated that I was planning to play around with a few ideas:</p>
+<blockquote>
+<ul>
+<li>Perhaps a package manager as a proof-of-concept?</li>
+<li>Maybe a package that can use Neovim as an interpreter to run LuaRocks
+so that it can use Neovim’s Lua API in test runs?</li>
+</ul>
+</blockquote>
+<p>…and I ended up going down the second rabbit hole.</p>
+<h2 id="why-not-just-use-plenary.nvim-to-test-plugins">Why not just use <code>plenary.nvim</code> to test plugins?</h2>
+<p>Before Neovim 0.9, the status quo for Lua plugins has been to use <a href="https://github.com/nvim-lua/plenary.nvim"><code>plenary.nvim</code></a>
+for testing.
+This still seems to be the case for many (including my own plugins, as of writing this post).
+Popular plugin templates still use <code>plenary-test</code> in their CI.</p>
+<p>For example:</p>
+<ul>
+<li><a href="https://github.com/ellisonleao/nvim-plugin-template/blob/29d9752/Makefile">ellisonleao/nvim-plugin-template</a></li>
+<li><a href="https://github.com/m00qek/plugin-template.nvim/blob/704ad7b/test/Makefile">m00qek/plugin-template.nvim</a></li>
+<li><a href="https://github.com/nvim-lua/nvim-lua-plugin-template/blob/57565ed685c1fe2d16022b2d128092becac802eb/.github/workflows/tests.yml#L26">nvim-lua/nvim-lua-plugin-template</a> (Now uses <code>busted</code>)</li>
+</ul>
+<p>What are the downsides of using <code>plenary-test</code>?</p>
+<p>For one thing, it is a stripped-down re-implementation of <a href="https://lunarmodules.github.io/busted/"><code>busted</code></a>.
+As such, it only supports <a href="https://github.com/nvim-lua/plenary.nvim/blob/499e0743cf5e8075cd32af68baa3946a1c76adf1/doc/plenary-test.txt#LL55C1-L64C1">a small subset of busted items</a>.
+Functions like <code>setup</code>, <code>teardown</code>, <code>insulate</code>, <code>expose</code>, <code>finally</code>,
+or features like tagging tests, are not implemented.</p>
+<p>Another downside is that different plugins have different approaches at managing the
+<code>plenary-test</code> dependency. An approach I see quite often is to clone the plenary.nvim
+repository into <code>$HOME/.local/share/nvim/site/pack/vendor/start</code>
+and then to symlink it to the project’s root or parent directory.
+This is not very intuitive for potential contributors.
+Plus, the fact that many plugins use <code>git clone</code> to fetch the <code>HEAD</code> of plenary.nvim’s
+<code>master</code> branch, is not ideal for reproducibility.</p>
+<h2 id="enter-neovim-0.9">Enter Neovim 0.9</h2>
+<p>With the introduction of Neovim 0.9, <a href="https://neovim.io/doc/user/starting.html#-l">you can now leverage the <code>-l</code> option</a>
+to run lua scripts via the command-line interface.
+Combining this with <code>-c lua [...]</code>, Neovim transforms into a full-fledged LuaJIT interpreter,
+providing access to the <a href="https://neovim.io/doc/user/lua.html">Neovim lua API</a>.</p>
+<p>To test this out, you can create a <code>sayHello.lua</code> file with the following content:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">vim</span><span class="op">.</span>print <span class="op">{</span> <span class="st">&quot;Hello&quot;</span><span class="op">,</span> <span class="va">name</span> <span class="op">}</span></span></code></pre></div>
+<p>Then run</p>
+<pre class="console"><code>nvim -c 'lua name = &quot;teto&quot;' -l sayHello.lua
+&gt; { &quot;Hello&quot;, &quot;teto&quot; }</code></pre>
+<p>As it turns out, it’s quite easy to run <code>busted</code> tests using Neovim 0.9+ as the interpreter.</p>
+<h2 id="how-to-test-your-plugin-with-busted">How to test your plugin with <code>busted</code></h2>
+<h3 id="prerequisites">Prerequisites</h3>
+<ul>
+<li>If your plugin has any dependencies, it is a lot easier to set up
+if they <a href="https://luarocks.org/labels/neovim">are available on LuaRocks</a>.</li>
+<li>So in case they aren’t, open an issue asking to publish releases to LuaRocks,
+e.g. using the <a href="https://github.com/marketplace/actions/luarocks-tag-release">luarocks-tag-release</a>
+GitHub action.</li>
+<li>Install <code>luarocks</code> using your distro’s package manager
+and also install <code>LuaJIT</code> or <code>Lua 5.1</code>.
+The version doesn’t matter, since we’ll be using Neovim as the interpreter.
+But <code>luarocks</code> needs a real Lua installation that exposes its C header files to
+install certain dependencies.</li>
+</ul>
+<h3 id="preparing-your-plugin">Preparing your plugin</h3>
+<h4 id="add-a-.rockspec-file">1. Add a <code>.rockspec</code> file</h4>
+<p>Add a <a href="https://github.com/luarocks/luarocks/wiki/Rockspec-format">rockspec</a>
+named <code>&lt;my-plugin&gt;-scm-1.rockspec</code><a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> to your project’s root.</p>
+<p>A minimal rockspec for testing might look something like this:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="va">rockspec_format</span> <span class="op">=</span> <span class="st">'3.0'</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="va">package</span> <span class="op">=</span> <span class="st">'&lt;my-plugin&gt;'</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="va">version</span> <span class="op">=</span> <span class="st">'scm-1'</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="va">test_dependencies</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">'lua &gt;= 5.1'</span><span class="op">,</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="st">'nlua'</span><span class="op">,</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="st">'nui.nvim'</span><span class="op">,</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="va">source</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="va">url</span> <span class="op">=</span> <span class="st">'git://github.com/mrcjkb/'</span> <span class="op">..</span> <span class="va">package</span><span class="op">,</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="va">build</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">type</span> <span class="op">=</span> <span class="st">'builtin'</span><span class="op">,</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>This file tells luarocks and <code>busted</code> how to build your plugin as a Lua package
+and which dependencies to install before running tests.</p>
+<h4 id="add-a-.busted-file">2. Add a <code>.busted</code> file</h4>
+<p>Next, add a <code>.busted</code> file to the root of your project, to configure <code>busted</code>.
+This file should contain the following content:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> <span class="op">{</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="va">_all</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="va">coverage</span> <span class="op">=</span> <span class="kw">false</span><span class="op">,</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="va">lpath</span> <span class="op">=</span> <span class="st">&quot;lua/?.lua;lua/?/init.lua&quot;</span><span class="op">,</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="va">lua</span> <span class="op">=</span> <span class="st">&quot;nlua&quot;</span><span class="op">,</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">},</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="va">default</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="va">verbose</span> <span class="op">=</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">},</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  <span class="va">tests</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="va">verbose</span> <span class="op">=</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  <span class="op">},</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<blockquote>
+<p><strong>Note</strong></p>
+<ul>
+<li>The <code>lpath</code> is necessary to tell <code>busted</code> to look for your plugin’s source
+code in the <code>lua</code> directory.</li>
+<li><code>lua = "nlua"</code> runs your tests with <a href="https://github.com/mfussenegger/nlua"><code>nlua</code></a>
+(a Neovim-Lua CLI adapter) as the Lua interpreter.</li>
+</ul>
+</blockquote>
+<h4 id="run-your-tests">3. Run your tests</h4>
+<p>That’s it! You can run your tests with</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">luarocks</span> test <span class="at">--local</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co"># or</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="ex">busted</span></span></code></pre></div>
+<p>Without any arguments, <code>busted</code> looks for <code>*_spec.lua</code> files in
+a directory named <code>spec</code>.</p>
+<p>Or if you want to run a single test file:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">luarocks</span> test spec/path_to_file.lua <span class="at">--local</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co"># or</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="ex">busted</span> spec/path_to_file.lua</span></code></pre></div>
+<h2 id="using-github-actions-to-run-tests">Using GitHub Actions to run tests</h2>
+<p>So far, this post has discussed using <code>busted</code> locally for testing Neovim plugins.
+However, to ensure thorough testing, compatibility, and bug detection across different environments,
+it’s essential to make this approach compatible with CI workflows like GitHub Actions.</p>
+<p>For that, you can use the <a href="https://github.com/nvim-neorocks/nvim-busted-action">nvim-busted-action</a>,
+which will take care of all the setup for you.</p>
+<h2 id="moving-forward">Moving forward</h2>
+<p>If this has motivated you to try out using <code>luarocks</code> and <code>busted</code> to test your Neovim plugins,
+I’d love to <a href="https://github.com/nvim-neorocks/nvim-busted-action/discussions/categories/ideas">hear your feedback</a>!</p>
+<ul>
+<li>Have you run into any issues?</li>
+<li>Is there still something Neovim-specific that <code>plenary-test</code> provides,
+which you are missing from this approach?</li>
+<li>Do you have any other thoughts?</li>
+</ul>
+<p>Personally, I would like to see LuaRocks being able to run using Neovim,
+without having to install Lua.
+This possibility doesn’t seem far-fetched, especially considering that
+<a href="https://github.com/luarocks/luarocks/issues/1499#issuecomment-1492486727">there are other communities that would also benefit from such an integration</a>.</p>
+<blockquote>
+<p><strong>Note</strong></p>
+<p>This post has been updated to use <a href="https://github.com/mfussenegger/nlua"><code>nlua</code></a>,
+instead of creating a busted wrapper script manually.</p>
+</blockquote>
+<section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Replace <code>&lt;my-plugin&gt;</code> with the name of your plugin.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+    </section>
+</article>
+
+            </div>
+        </main>
+
+        <footer>
+            <div class="container">
+              Site proudly generated by
+              <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+            </div>
+        </footer>
+    </body>
+</html>
