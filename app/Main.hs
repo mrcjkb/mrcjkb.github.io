@@ -139,6 +139,7 @@ postCtx =
 siteCtx :: Context String
 siteCtx =
     bufferNameField `mappend`
+    filetypeField `mappend`
     defaultContext
 
 bufferNameField :: Context String
@@ -153,6 +154,20 @@ bufferName path
   | otherwise = path
   where
     markdown = ".markdown" :: String
+
+filetypeField :: Context String
+filetypeField = field "filetype" \item ->
+    pure . filetype . toFilePath $ itemIdentifier item
+
+filetype :: String -> String
+filetype "index.html" = "markdown"
+filetype "cv.html" = "pdf"
+filetype path
+  | ".markdown" `isSuffixOf` path = "markdown"
+  | ".md" `isSuffixOf` path = "markdown"
+  | ".rst" `isSuffixOf` path = "rst"
+  | ".html" `isSuffixOf` path = "html"
+  | otherwise = "text"
 
 pandocCodeStyle :: Style
 pandocCodeStyle = catppuccinMocha
