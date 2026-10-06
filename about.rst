@@ -1,5 +1,6 @@
 ---
 title: About
+active_about: true
 class: container
 description: "About Marc Jakobi - a renewable energy systems engineer and Haskell developer, and open source maintainer."
 ---

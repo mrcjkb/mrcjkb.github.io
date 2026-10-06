@@ -5,7 +5,7 @@ tags: lua, lux, luanox, luarocks, neovim
 class: container
 ---
 
-![](https://github.com/lumen-oss/lux/raw/master/lux-logo.svg){ width=300px }
+![](/images/lux-logo.svg){ width=300px }
 ![](https://beta.luanox.org/images/logo.svg){ width=300px }
 
 A few months ago, I posted [an introduction to Lux](https://mrcjkb.dev/posts/2025-04-07-lux-announcement.html),

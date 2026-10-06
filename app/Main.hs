@@ -5,8 +5,10 @@ import  Data.Map qualified as Map
 import  Hakyll
 import  Prelude
 import  Skylighting.Types (Style (..), TokenStyle (..), Color, ToColor (..), TokenType (..), defStyle)
+import  Text.Pandoc.Definition (Block (CodeBlock), Pandoc)
 import  Text.Pandoc.Highlighting
 import  Text.Pandoc.Options (WriterOptions (..))
+import  Text.Pandoc.Walk (walk)
 
 main :: IO ()
 main = hakyll  do
@@ -22,6 +24,10 @@ main = hakyll  do
         route   idRoute
         compile compressCssCompiler
 
+    match "fonts/*"  do
+        route   idRoute
+        compile copyFileCompiler
+
     match "CNAME"  do
         route   idRoute
         compile copyFileCompiler
@@ -33,13 +39,13 @@ main = hakyll  do
     match (fromList ["about.rst", "contact.markdown"])  do
         route   $ setExtension "html"
         compile $ pandocCompiler'
-            >>= loadAndApplyTemplate "templates/default.html" defaultContext
+            >>= loadAndApplyTemplate "templates/default.html" siteCtx
             >>= relativizeUrls
 
     match "cv.html"  do
         route idRoute
         compile $ getResourceBody
-            >>= loadAndApplyTemplate "templates/default.html" defaultContext
+            >>= loadAndApplyTemplate "templates/default.html" siteCtx
             >>= relativizeUrls
 
     match "posts/*"  do
@@ -58,7 +64,8 @@ main = hakyll  do
                     listField "posts" postCtx (return posts) `mappend`
                     constField "title" "Archive"             `mappend`
                     constField "description" "Every post on mrcjkb.dev, newest first." `mappend`
-                    defaultContext
+                    constField "active_archive" "true"      `mappend`
+                    siteCtx
 
             makeItem ""
                 >>= loadAndApplyTemplate "templates/archive.html" archiveCtx
@@ -85,7 +92,7 @@ main = hakyll  do
             posts <- recentFirst =<< loadAll "posts/*"
             let indexCtx =
                     listField "posts" postCtx (return posts) `mappend`
-                    defaultContext
+                    siteCtx
 
             getResourceBody
                 >>= applyAsTemplate indexCtx
@@ -127,18 +134,45 @@ main = hakyll  do
 postCtx :: Context String
 postCtx =
     dateField "date" "%B %e, %Y" `mappend`
+    siteCtx
+
+siteCtx :: Context String
+siteCtx =
+    bufferNameField `mappend`
     defaultContext
+
+bufferNameField :: Context String
+bufferNameField = field "buffername" \item ->
+    pure . bufferName . toFilePath $ itemIdentifier item
+
+bufferName :: String -> String
+bufferName "index.html" = "~/mrcjkb.dev"
+bufferName "cv.html" = "cv.pdf"
+bufferName path
+  | markdown `isSuffixOf` path = take (length path - length markdown) path <> ".md"
+  | otherwise = path
+  where
+    markdown = ".markdown" :: String
 
 pandocCodeStyle :: Style
 pandocCodeStyle = catppuccinMocha
 
 pandocCompiler' :: Compiler (Item String)
 pandocCompiler' =
-  pandocCompilerWith
+  pandocCompilerWithTransform
     defaultHakyllReaderOptions
     defaultHakyllWriterOptions
       { writerHighlightStyle   = Just pandocCodeStyle
       }
+    addLineNumbers
+
+addLineNumbers :: Pandoc -> Pandoc
+addLineNumbers = walk addNumberLines
+  where
+    addNumberLines :: Block -> Block
+    addNumberLines (CodeBlock (identifier, classes, attrs) code) =
+      CodeBlock (identifier, "numberLines" : classes, attrs) code
+    addNumberLines block = block
 
 type FeedRenderer = FeedConfiguration -> Context String -> [Item String] -> Compiler (Item String)
 
@@ -180,7 +214,6 @@ catppuccinMocha = Style{
     , (ImportTok, defStyle)
     , (VariableTok, defStyle{ tokenColor = color 0xb4befe })
     , (ControlFlowTok, defStyle{ tokenColor = color 0x89b4fa })
-    , (OperatorTok, defStyle)
     , (BuiltInTok, defStyle)
     , (ExtensionTok, defStyle)
     , (PreprocessorTok, defStyle{ tokenColor = color 0xf38ba8 })

@@ -33,6 +33,22 @@
       pname = "mrcjkbs-site";
       system = config.pkgs.stdenv.hostPlatform.system;
       cv-pkg = inputs.cv.packages.${system}.default;
+      mono-font-dir = "${config.pkgs.nerd-fonts.jetbrains-mono}/share/fonts/truetype/NerdFonts/JetBrainsMono";
+      jetbrains-mono-woff2 =
+        config.pkgs.runCommand "jetbrains-mono-woff2" {
+          nativeBuildInputs = [
+            (config.pkgs.python3.withPackages (ps: [ps.brotli ps.fonttools]))
+          ];
+        } ''
+          mkdir -p $out
+          for style in Regular Bold Italic BoldItalic; do
+            pyftsubset ${mono-font-dir}/JetBrainsMonoNerdFontMono-$style.ttf \
+              --output-file=$out/JetBrainsMono-$style.woff2 \
+              --flavor=woff2 \
+              --layout-features='*' \
+              --unicodes=U+0020-00FF,U+2000-206F,U+2190-21FF,U+E0A0,U+F071
+          done
+        '';
     in {
       cabal = {
         author = "Marc Jakobi";
@@ -85,6 +101,7 @@
             "hakyll"
             "skylighting-core"
             "pandoc"
+            "pandoc-types"
           ];
         };
       };
@@ -94,6 +111,11 @@
           ''
             NIX_MONITOR=disable nix run .#gen-cabal
             NIX_MONITOR=disable nix run .#tags
+            mkdir -p fonts files
+            cp -f ${jetbrains-mono-woff2}/*.woff2 fonts/
+            chmod u+w fonts/*.woff2
+            cp -f ${cv-pkg}/* files/
+            chmod u+w files/*
           ''
           + self.checks.${system}.git.shellHook;
         buildInputs = self.checks.${system}.git.enabledPackages;
@@ -126,6 +148,8 @@
               runHook preBuild
               mkdir files
               cp ${cv-pkg}/* files/
+              mkdir -p fonts
+              cp ${jetbrains-mono-woff2}/*.woff2 fonts/
               ${lib.getExe site-pkg} build --verbose
               runHook postBuild
             '';

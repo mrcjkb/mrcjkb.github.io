@@ -5,7 +5,7 @@ tags: lua, luarocks, neovim, nix
 class: container
 ---
 
-![](https://github.com/nvim-neorocks/lux/raw/master/lux-logo.svg){ width=300px }
+![](/images/lux-logo.svg){ width=300px }
 
 It's time Lua got the ecosystem it deserves!
 
