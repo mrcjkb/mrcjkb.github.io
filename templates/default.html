@@ -4,7 +4,28 @@
         <meta charset="utf-8">
         <meta http-equiv="x-ua-compatible" content="ie=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>mrcjkb.dev - $title$</title>
+        <title>$if(meta_title)$$meta_title$$else$$title$ | mrcjkb.dev$endif$</title>
+        <meta name="description" content="$if(description)$$description$$else$Marc Jakobi - renewable energy systems engineer and Haskell developer, writing about Haskell, Nix, Neovim, Lua tooling and cleantech.$endif$">
+        <meta name="robots" content="index, follow, max-image-preview:large">
+        <link rel="canonical" href="$if(canonical)$$canonical$$else$https://mrcjkb.dev$url$$endif$">
+        <meta property="og:locale" content="en_US">
+        <meta property="og:type" content="$if(date)$article$else$website$endif$">
+        <meta property="og:site_name" content="mrcjkb.dev">
+        <meta property="og:title" content="$if(meta_title)$$meta_title$$else$$title$$endif$">
+        <meta property="og:description" content="$if(description)$$description$$else$Marc Jakobi - renewable energy systems engineer and Haskell developer.$endif$">
+        <meta property="og:url" content="$if(canonical)$$canonical$$else$https://mrcjkb.dev$url$$endif$">
+        <meta property="og:image" content="https://mrcjkb.dev/images/og-image.jpg">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="$if(meta_title)$$meta_title$$else$$title$$endif$">
+        <meta name="twitter:description" content="$if(description)$$description$$else$Marc Jakobi - renewable energy systems engineer and Haskell developer.$endif$">
+        <meta name="twitter:image" content="https://mrcjkb.dev/images/og-image.jpg">
+        <script type="application/ld+json">
+        {"@context":"https://schema.org","@graph":[{"@type":"Person","@id":"https://mrcjkb.dev/#person","name":"Marc Jakobi","url":"https://mrcjkb.dev/","jobTitle":"Renewable Energy Systems Engineer and Haskell Developer","sameAs":["https://github.com/mrcjkb","https://www.linkedin.com/in/marc-jakobi/","https://bsky.app/profile/mrcjkb.bsky.social"]},{"@type":"WebSite","@id":"https://mrcjkb.dev/#website","url":"https://mrcjkb.dev/","name":"mrcjkb.dev","description":"Marc Jakobi on Haskell, Nix, Neovim, Lua tooling and renewable energy systems.","inLanguage":"en","author":{"@id":"https://mrcjkb.dev/#person"}}]}
+        </script>
+        <link rel="icon" href="/images/favicon.ico">
+        <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
         <link rel="stylesheet" href="/css/default.css" />
         <link rel="stylesheet" href="/css/syntax.css" />
     </head>

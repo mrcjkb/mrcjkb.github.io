@@ -1,5 +1,6 @@
 ---
 title: Algebraic data types in Lua (Almost)
+description: "How to get close to algebraic data types in Lua, with tagged unions, pattern matching and exhaustive checks for safer Neovim plugin code."
 tags: neovim, plugin, lua, functional-programming, fp, adt
 class: container
 ---

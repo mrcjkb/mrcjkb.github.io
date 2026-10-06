@@ -1,5 +1,6 @@
 ---
 title: A modern approach to tree-sitter parsers in Neovim
+description: "A modern approach to tree-sitter parsers in Neovim: shipping and updating parsers as LuaRocks dependencies instead of building them yourself."
 tags: neovim, tree-sitter, plugin, dependencies, luarocks
 class: container
 ---

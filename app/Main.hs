@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+import  Data.List (isSuffixOf)
 import  Data.Map qualified as Map
 import  Hakyll
 import  Prelude
@@ -22,6 +23,10 @@ main = hakyll  do
         compile compressCssCompiler
 
     match "CNAME"  do
+        route   idRoute
+        compile copyFileCompiler
+
+    match "robots.txt"  do
         route   idRoute
         compile copyFileCompiler
 
@@ -51,7 +56,8 @@ main = hakyll  do
             posts <- recentFirst =<< loadAll "posts/*"
             let archiveCtx =
                     listField "posts" postCtx (return posts) `mappend`
-                    constField "title" "Archives"            `mappend`
+                    constField "title" "Archive"             `mappend`
+                    constField "description" "Every post on mrcjkb.dev, newest first." `mappend`
                     defaultContext
 
             makeItem ""
@@ -86,7 +92,34 @@ main = hakyll  do
                 >>= loadAndApplyTemplate "templates/default.html" indexCtx
                 >>= relativizeUrls
 
+    create ["sitemap.xml"]  do
+        posts <- getMatches "posts/*"
+        let postPaths = toHtml . toFilePath <$> posts
+            staticPaths :: [String]
+            staticPaths = ["about.html", "contact.html", "cv.html", "archive.html"]
+            urls = siteUrl <> "/" : (((siteUrl <>) . ("/" <>)) <$> (postPaths <> staticPaths))
+        route idRoute
+        compile . makeItem $ sitemap urls
+
     match "templates/*" $ compile templateBodyCompiler
+  where
+    siteUrl :: String
+    siteUrl = "https://mrcjkb.dev"
+
+    sitemap :: [String] -> String
+    sitemap urls =
+      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        <> "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n"
+        <> mconcat ((\url -> "  <url><loc>" <> url <> "</loc></url>\n") <$> urls)
+        <> "</urlset>\n"
+
+    toHtml :: String -> String
+    toHtml path = stripSuffix' ".markdown" path <> ".html"
+
+    stripSuffix' :: Eq a => [a] -> [a] -> [a]
+    stripSuffix' suffix str
+      | suffix `isSuffixOf` str = take (length str - length suffix) str
+      | otherwise = str
 
 
 --------------------------------------------------------------------------------
@@ -113,11 +146,11 @@ mkFeed :: FeedRenderer -> Compiler (Item String)
 mkFeed render = do
     let feedCtx = postCtx `mappend` bodyField "description"
         feedConfiguration = FeedConfiguration
-          { feedTitle       = "mrcjkb"
-          , feedDescription = "My Hakyll site"
+          { feedTitle       = "mrcjkb.dev"
+          , feedDescription = "Marc Jakobi on Haskell, Nix, Neovim and renewable energy systems."
           , feedAuthorName  = "Marc Jakobi"
           , feedAuthorEmail = "marc@jakobi.dev"
-          , feedRoot        = "mrcjkb.dev"
+          , feedRoot        = "https://mrcjkb.dev"
           }
     posts <- fmap (take 10) . recentFirst =<< loadAllSnapshots "posts/*" "content"
     render feedConfiguration feedCtx posts

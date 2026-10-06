@@ -1,5 +1,6 @@
 ---
 title: Contact
+description: "How to get in touch with Marc Jakobi - via Matrix, LinkedIn or e-mail."
 ---
 
 If you'd like to get in touch, feel free to connect with me via:

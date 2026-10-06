@@ -1,5 +1,6 @@
 ---
 title: Rethinking the `setup` convention in Neovim. Is it time for a paradigm shift?
+description: "Rethinking Neovim's setup() convention: why plugins should expose Lua APIs and prefer vim.g namespaced configuration over a single setup function."
 tags: neovim, plugin, lua, dependencies
 class: container
 ---

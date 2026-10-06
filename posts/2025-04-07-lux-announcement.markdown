@@ -1,5 +1,6 @@
 ---
 title: Announcing Lux - a luxurious package manager for Lua
+description: "Announcing Lux, a new package manager for Lua that treats Neovim and Nix as first-class citizens and is compatible with LuaRocks."
 tags: lua, luarocks, neovim, nix
 class: container
 ---
