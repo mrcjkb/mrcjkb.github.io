@@ -346,12 +346,28 @@ article .header {
   background: var(--mauve);
 }
 
-.branch {
+.jj {
   display: flex;
   align-items: center;
+  gap: 0.5ch;
   padding: 0 0.8rem;
-  color: var(--base);
-  background: var(--blue);
+  white-space: nowrap;
+}
+
+.jj-symbol {
+  color: var(--blue);
+}
+
+.jj-change {
+  color: var(--overlay0);
+}
+
+.jj-prefix {
+  color: var(--mauve);
+}
+
+.jj-bookmark {
+  color: var(--green);
 }
 
 .spacer {
@@ -516,7 +532,7 @@ article .header {
   }
 
   .tabline-path,
-  .branch,
+  .jj,
   .seg {
     display: none;
   }

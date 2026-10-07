@@ -46,7 +46,7 @@
               --output-file=$out/JetBrainsMono-$style.woff2 \
               --flavor=woff2 \
               --layout-features='*' \
-              --unicodes=U+0020-00FF,U+2000-206F,U+2190-21FF,U+E0A0,U+F071
+              --unicodes=U+0020-00FF,U+2000-206F,U+2190-21FF,U+F071,U+F418,U+F15C6
           done
         '';
     in {
