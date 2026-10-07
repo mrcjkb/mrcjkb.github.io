@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img">
+  <title>mrcjkb.dev</title>
+  <rect x="3" y="9" width="58" height="46" rx="9" fill="#cba6f7"/>
+  <polyline points="18,25 28,34 18,43" fill="none" stroke="#202020" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="33" y="39" width="16" height="5.5" rx="1.5" fill="#202020"/>
+</svg>
