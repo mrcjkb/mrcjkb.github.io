@@ -1,4 +1,5 @@
 ---
+language: lua
 title: lx dist - distribute your Lua projects as archives or standalone binaries
 description: "lx dist: distribute your Lua projects as archives or standalone binaries with the Lux package manager, without requiring recipients to install Lux."
 tags: lux, lua, luarocks

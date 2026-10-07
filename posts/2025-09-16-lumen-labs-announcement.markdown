@@ -1,4 +1,5 @@
 ---
+language: lua
 title: Lumen Labs - Luanox and Lux updates
 description: "Lumen Labs and Lux updates, plus Luanox: a work-in-progress hosting site for Lua packages in the spirit of crates.io or PyPI."
 tags: lua, lux, luanox, luarocks, neovim

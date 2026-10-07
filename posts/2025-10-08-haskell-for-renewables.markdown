@@ -1,4 +1,5 @@
 ---
+language: haskell
 title: Why Haskell is the perfect fit for renewable energy tech
 description: "Why Haskell is a great fit for renewable energy tech: type safety, concurrency and reliability for distributed energy management systems."
 tags: haskell, cleantech, renewables, energy, climatetech

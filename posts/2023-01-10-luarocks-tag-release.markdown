@@ -1,4 +1,5 @@
 ---
+language: lua
 title: Publish your Neovim plugins to LuaRocks
 description: "How to publish your Neovim plugins to LuaRocks with luarocks-tag-release, and why it makes Neovim plugin dependency management saner."
 tags: neovim, plugin, luarocks, lua, dependencies

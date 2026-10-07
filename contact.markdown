@@ -1,5 +1,6 @@
 ---
 title: Contact
+language: markdown
 active_contact: true
 description: "How to get in touch with Marc Jakobi - via Matrix, LinkedIn or e-mail."
 ---

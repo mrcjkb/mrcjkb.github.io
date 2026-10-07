@@ -1,4 +1,5 @@
 ---
+language: lua
 title: Test your Neovim plugins with luarocks and busted
 description: "Test your Neovim plugins with LuaRocks and busted: a fast, headless test suite using plenary and nvim-busted-action in CI."
 tags: neovim, plugin, luarocks, lua, busted, test, plenary
