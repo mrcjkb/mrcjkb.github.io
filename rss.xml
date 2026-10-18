@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"
+    xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <channel>
+        <title>mrcjkb.dev</title>
+        <link>https://mrcjkb.dev</link>
+        <description><![CDATA[Marc Jakobi on Haskell, Nix, Neovim and renewable energy systems.]]></description>
+        <atom:link href="https://mrcjkb.dev/rss.xml" rel="self"
+                   type="application/rss+xml" />
+        <lastBuildDate>Tue, 06 Oct 2026 00:00:00 UT</lastBuildDate>
+        <item>
+    <title>Designing Haskell libraries for qualified import</title>
+    <link>https://mrcjkb.dev/posts/2026-10-06-design-for-qualified-import.html</link>
+    <description><![CDATA[Haskell development: Designing libraries for qualified import]]></description>
+    <pubDate>Tue, 06 Oct 2026 00:00:00 UT</pubDate>
+    <guid>https://mrcjkb.dev/posts/2026-10-06-design-for-qualified-import.html</guid>
+    <dc:creator>Marc Jakobi</dc:creator>
+</item>
+<item>
+    <title>lx dist - distribute your Lua projects as archives or standalone binaries</title>
+    <link>https://mrcjkb.dev/posts/2026-07-08-lx-dist.html</link>
+    <description><![CDATA[lx dist: distribute your Lua projects as archives or standalone binaries with the Lux package manager, without requiring recipients to install Lux.]]></description>
+    <pubDate>Wed, 08 Jul 2026 00:00:00 UT</pubDate>
+    <guid>https://mrcjkb.dev/posts/2026-07-08-lx-dist.html</guid>
+    <dc:creator>Marc Jakobi</dc:creator>
+</item>
+<item>
+    <title>Why Haskell is the perfect fit for renewable energy tech</title>
+    <link>https://mrcjkb.dev/posts/2025-10-08-haskell-for-renewables.html</link>
+    <description><![CDATA[Why Haskell is a great fit for renewable energy tech: type safety, concurrency and reliability for distributed energy management systems.]]></description>
+    <pubDate>Wed, 08 Oct 2025 00:00:00 UT</pubDate>
+    <guid>https://mrcjkb.dev/posts/2025-10-08-haskell-for-renewables.html</guid>
+    <dc:creator>Marc Jakobi</dc:creator>
+</item>
+<item>
+    <title>Lumen Labs - Luanox and Lux updates</title>
+    <link>https://mrcjkb.dev/posts/2025-09-16-lumen-labs-announcement.html</link>
+    <description><![CDATA[Lumen Labs and Lux updates, plus Luanox: a work-in-progress hosting site for Lua packages in the spirit of crates.io or PyPI.]]></description>
+    <pubDate>Tue, 16 Sep 2025 00:00:00 UT</pubDate>
+    <guid>https://mrcjkb.dev/posts/2025-09-16-lumen-labs-announcement.html</guid>
+    <dc:creator>Marc Jakobi</dc:creator>
+</item>
+<item>
+    <title>Announcing Lux - a luxurious package manager for Lua</title>
+    <link>https://mrcjkb.dev/posts/2025-04-07-lux-announcement.html</link>
+    <description><![CDATA[Announcing Lux, a new package manager for Lua that treats Neovim and Nix as first-class citizens and is compatible with LuaRocks.]]></description>
+    <pubDate>Mon, 07 Apr 2025 00:00:00 UT</pubDate>
+    <guid>https://mrcjkb.dev/posts/2025-04-07-lux-announcement.html</guid>
+    <dc:creator>Marc Jakobi</dc:creator>
+</item>
+<item>
+    <title>A modern approach to tree-sitter parsers in Neovim</title>
+    <link>https://mrcjkb.dev/posts/2024-07-28-tree-sitter.html</link>
+    <description><![CDATA[A modern approach to tree-sitter parsers in Neovim: shipping and updating parsers as LuaRocks dependencies instead of building them yourself.]]></description>
+    <pubDate>Sun, 28 Jul 2024 00:00:00 UT</pubDate>
+    <guid>https://mrcjkb.dev/posts/2024-07-28-tree-sitter.html</guid>
+    <dc:creator>Marc Jakobi</dc:creator>
+</item>
+<item>
+    <title>Rethinking the `setup` convention in Neovim. Is it time for a paradigm shift?</title>
+    <link>https://mrcjkb.dev/posts/2023-08-22-setup.html</link>
+    <description><![CDATA[Rethinking Neovim's setup() convention: why plugins should expose Lua APIs and prefer vim.g namespaced configuration over a single setup function.]]></description>
+    <pubDate>Tue, 22 Aug 2023 00:00:00 UT</pubDate>
+    <guid>https://mrcjkb.dev/posts/2023-08-22-setup.html</guid>
+    <dc:creator>Marc Jakobi</dc:creator>
+</item>
+<item>
+    <title>Algebraic data types in Lua (Almost)</title>
+    <link>https://mrcjkb.dev/posts/2023-08-17-lua-adts.html</link>
+    <description><![CDATA[How to get close to algebraic data types in Lua, with tagged unions, pattern matching and exhaustive checks for safer Neovim plugin code.]]></description>
+    <pubDate>Thu, 17 Aug 2023 00:00:00 UT</pubDate>
+    <guid>https://mrcjkb.dev/posts/2023-08-17-lua-adts.html</guid>
+    <dc:creator>Marc Jakobi</dc:creator>
+</item>
+<item>
+    <title>Test your Neovim plugins with luarocks and busted</title>
+    <link>https://mrcjkb.dev/posts/2023-06-06-luarocks-test.html</link>
+    <description><![CDATA[Test your Neovim plugins with LuaRocks and busted: a fast, headless test suite using plenary and nvim-busted-action in CI.]]></description>
+    <pubDate>Tue, 06 Jun 2023 00:00:00 UT</pubDate>
+    <guid>https://mrcjkb.dev/posts/2023-06-06-luarocks-test.html</guid>
+    <dc:creator>Marc Jakobi</dc:creator>
+</item>
+<item>
+    <title>Publish your Neovim plugins to LuaRocks</title>
+    <link>https://mrcjkb.dev/posts/2023-01-10-luarocks-tag-release.html</link>
+    <description><![CDATA[How to publish your Neovim plugins to LuaRocks with luarocks-tag-release, and why it makes Neovim plugin dependency management saner.]]></description>
+    <pubDate>Tue, 10 Jan 2023 00:00:00 UT</pubDate>
+    <guid>https://mrcjkb.dev/posts/2023-01-10-luarocks-tag-release.html</guid>
+    <dc:creator>Marc Jakobi</dc:creator>
+</item>
+
+    </channel>
+</rss>
