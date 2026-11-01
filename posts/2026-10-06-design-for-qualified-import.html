@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Designing Haskell libraries for qualified import | mrcjkb.dev</title>
+        <meta name="description" content="Haskell development: Designing libraries for qualified import">
+        <meta name="robots" content="index, follow, max-image-preview:large">
+        <link rel="canonical" href="https://mrcjkb.dev/posts/2026-10-06-design-for-qualified-import.html">
+        <meta property="og:locale" content="en_US">
+        <meta property="og:type" content="article">
+        <meta property="og:site_name" content="mrcjkb.dev">
+        <meta property="og:title" content="Designing Haskell libraries for qualified import">
+        <meta property="og:description" content="Haskell development: Designing libraries for qualified import">
+        <meta property="og:url" content="https://mrcjkb.dev/posts/2026-10-06-design-for-qualified-import.html">
+        <meta property="og:image" content="https://mrcjkb.dev/images/og-image.jpg">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Designing Haskell libraries for qualified import">
+        <meta name="twitter:description" content="Haskell development: Designing libraries for qualified import">
+        <meta name="twitter:image" content="https://mrcjkb.dev/images/og-image.jpg">
+        <script type="application/ld+json">
+        {"@context":"https://schema.org","@graph":[{"@type":"Person","@id":"https://mrcjkb.dev/#person","name":"Marc Jakobi","url":"https://mrcjkb.dev/","jobTitle":"Renewable Energy Systems Engineer and Haskell Developer","sameAs":["https://github.com/mrcjkb","https://www.linkedin.com/in/marc-jakobi/","https://bsky.app/profile/mrcjkb.bsky.social"]},{"@type":"WebSite","@id":"https://mrcjkb.dev/#website","url":"https://mrcjkb.dev/","name":"mrcjkb.dev","description":"Marc Jakobi on Haskell, Nix, Neovim, Lua tooling and renewable energy systems.","inLanguage":"en","author":{"@id":"https://mrcjkb.dev/#person"}}]}
+        </script>
+        <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
+        <link rel="icon" href="../images/favicon.ico" sizes="any">
+        <link rel="apple-touch-icon" href="../images/apple-touch-icon.png">
+        <link rel="stylesheet" href="../css/syntax.css" />
+        <link rel="stylesheet" href="../css/default.css" />
+    </head>
+    <body>
+        <header class="tabline">
+            <nav class="tabs" aria-label="Primary">
+                <a class="tab" href="../">~/mrcjkb.dev</a>
+                <a class="tab" href="../about.html">about.rst</a>
+                <a class="tab" href="../contact.html">contact.md</a>
+                <a class="tab" href="../cv.html">cv.pdf</a>
+                <a class="tab" href="../archive.html">archive.html</a>
+                <a class="tab" href="../rss.xml">rss.xml</a>
+                <a class="tab" href="../atom.xml">atom.xml</a>
+            </nav>
+            <span class="tabline-path">posts/2026-10-06-design-for-qualified-import.md</span>
+        </header>
+
+        <main role="main" class="window">
+            <div class="container">
+                <h1>Designing Haskell libraries for qualified import</h1>
+                <div class="buffer">
+                    <article>
+    <section class="header">
+        Posted on October  6, 2026
+        
+    </section>
+    <section>
+        <blockquote>
+<p><strong>Note</strong></p>
+<p>This post was <strong>not</strong> written or reviewed by a clanker.
+I do, however, hope that a clanker writing Haskell will come across it and be inspired to write better code.</p>
+<p>Please forgive my technical writing :)</p>
+</blockquote>
+<p>Recently, my business partner <a href="https://ners.ch/"><strong><span class="citation" data-cites="ners">@ners</span></strong></a> and I have been working hard on <a href="https://digital-autonomy.institute/"><strong>IDA</strong></a>,
+where we publish all our FOSS projects that we believe could be useful to others.
+It includes a bunch of Haskell libraries, including <a href="https://discourse.haskell.org/t/ann-project-fluent-for-haskell/14778">the recently announced Project Fluent collection</a>.</p>
+<p>Since my previous employer was liquidated in the beginning of the year,
+we’ve been spending a lot of time pair programming, planning, discussing architecture, and
+thinking about how to write concise, but readable Haskell that we both agree on.</p>
+<h2 id="designing-for-unqualified-import">Designing for <u><strong>un</strong></u>qualified import</h2>
+<p>What do I mean by “design for qualified import”?</p>
+<p>Let’s do a <code>hoogle</code> search for a module named <code>Kafka.Consumer</code>
+to demonstrate what I <strong><em>don’t</em></strong> mean:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode numberSource numberLines console"><code class="sourceCode"><span id="cb1-1"><a href="#cb1-1"></a>&gt; hoogle 'Kafka.Consumer' --count=6</span>
+<span id="cb1-2"><a href="#cb1-2"></a>module Kafka.Consumer</span>
+<span id="cb1-3"><a href="#cb1-3"></a>Kafka.Consumer newtype ConsumerGroupId</span>
+<span id="cb1-4"><a href="#cb1-4"></a>Kafka.Consumer ConsumerGroupId :: Text -&gt; ConsumerGroupId</span>
+<span id="cb1-5"><a href="#cb1-5"></a>Kafka.Consumer data ConsumerProperties</span>
+<span id="cb1-6"><a href="#cb1-6"></a>Kafka.Consumer ConsumerProperties :: Map Text Text -&gt; Maybe KafkaLogLevel -&gt; [Callback] -&gt; CallbackPollMode -&gt; ConsumerProperties</span>
+<span id="cb1-7"><a href="#cb1-7"></a>Kafka.Consumer data ConsumerRecord k v</span>
+<span id="cb1-8"><a href="#cb1-8"></a>-- plus more results not shown, pass --count=16 to see more</span></code></pre></div>
+<p>The module is called <code>Consumer</code> and it contains types such as <code>ConsumerGroupId</code>,
+<code>ConsumerProperties</code>, <code>ConsumerRecord</code>, etc.</p>
+<p>Now here’s a search for the <code>Kafka.Producer</code> module from the same library:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode numberSource numberLines console"><code class="sourceCode"><span id="cb2-1"><a href="#cb2-1"></a>&gt; hoogle Kafka.Producer --count=6</span>
+<span id="cb2-2"><a href="#cb2-2"></a>module Kafka.Producer</span>
+<span id="cb2-3"><a href="#cb2-3"></a>Kafka.Producer data ProducerProperties</span>
+<span id="cb2-4"><a href="#cb2-4"></a>Kafka.Producer ProducerProperties :: Map Text Text -&gt; Map Text Text -&gt; Maybe KafkaLogLevel -&gt; [Callback] -&gt; ProducerProperties</span>
+<span id="cb2-5"><a href="#cb2-5"></a>Kafka.Producer data ProducerRecord</span>
+<span id="cb2-6"><a href="#cb2-6"></a>Kafka.Producer ProducerRecord :: TopicName -&gt; ProducePartition -&gt; Maybe ByteString -&gt; Maybe ByteString -&gt; Headers -&gt; ProducerRecord</span>
+<span id="cb2-7"><a href="#cb2-7"></a>module Kafka.Producer.ProducerProperties</span>
+<span id="cb2-8"><a href="#cb2-8"></a>-- plus more results not shown, pass --count=16 to see more</span></code></pre></div>
+<p>This library is designed for <u><strong>un</strong></u>qualified import.<br />
+Consider a dependent package importing both modules:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode numberSource numberLines haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">import</span> <span class="dt">Kafka.Consumer</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="kw">import</span> <span class="dt">Kafka.Producer</span></span></code></pre></div>
+<p>Thanks to the <code>Producer*</code> and <code>Consumer*</code> prefixes,
+types like <code>ProducerProperties</code> and <code>ConsumerProperties</code> don’t clash with each other.
+But this has some drawbacks:</p>
+<p>A module that doesn’t need to worry about clashes (e.g. because it doesn’t import <code>Kafa.Producer</code>),
+including the <code>Kafka.Consumer</code> module itself, has to spell out the whole prefix everywhere.</p>
+<p>With unqualified imports like this, you have to be extra careful about the library’s version bounds.
+According to the <a href="https://pvp.haskell.org/">PVP specification</a>, adding new bindings is
+a <em>non-breaking change</em>.
+But updating dependencies could still break compilation if a new version adds a binding that
+clashes with one of your own bindings or one exposed by another unqualified import.
+To mitigate this, you can make your imports explicit:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode numberSource numberLines haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">import</span> <span class="dt">Kafka.Consumer</span> (<span class="dt">Consumer</span>, <span class="dt">ConsumerRecord</span> (..), newConsumer, runConsumer, <span class="co">{- ... -}</span> )</span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="kw">import</span> <span class="dt">Kafka.Producer</span> (<span class="dt">Producer</span>, <span class="dt">ProducerRecord</span> (..), newProducer, runProducer, <span class="co">{- ... -}</span> )</span></code></pre></div>
+<p>Eww.</p>
+<p>Granted, this does give you robustness against updates breaking your compilation.
+And being explicit about your imports makes it <em>somewhat</em> easier to follow
+where an identifier comes from.<br />
+But this is supposed to be Haskell, not Java<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>!</p>
+<p>So let’s qualify<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> our imports.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode numberSource numberLines haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">import</span> <span class="dt">Kafka.Consumer</span> <span class="kw">qualified</span> <span class="kw">as</span> <span class="dt">Consumer</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="kw">import</span> <span class="dt">Kafka.Producer</span> <span class="kw">qualified</span> <span class="kw">as</span> <span class="dt">Producer</span></span></code></pre></div>
+<p>Much better… Or so you might think.</p>
+<p>Here’s a type alias defined <a href="https://github.com/NoRedInk/haskell-libraries/blob/ce74cca58e9230c54536993f6452c4fdad66a08a/nri-kafka/src/Kafka/Worker/Fetcher.hs#L44">in the <code>nri-kafka</code> library</a>:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode numberSource numberLines haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">type</span> <span class="dt">ConsumerRecord</span> <span class="ot">=</span> <span class="dt">Consumer.ConsumerRecord</span> (<span class="dt">Maybe</span> <span class="dt">ByteString</span><span class="op">.</span><span class="dt">ByteString</span>) (<span class="dt">Maybe</span> <span class="dt">ByteString</span><span class="op">.</span><span class="dt">ByteString</span>)</span></code></pre></div>
+<p>Holy mother of namespace nesting! (◎_◎;)</p>
+<p>Arguably, this could be “solved” by shortening the qualifier.
+But doing so gives you the worst of both worlds:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode numberSource numberLines haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">import</span> <span class="dt">Kafka.Consumer</span> <span class="kw">qualified</span> <span class="kw">as</span> <span class="dt">C</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a></span>
+<span id="cb7-3"><a href="#cb7-3"></a>C.runConsumer</span></code></pre></div>
+<p>Congratulations. You’re now using an arbitrary qualifier the library has forced upon you.</p>
+<h2 id="designing-for-qualified-import">Designing for qualified import</h2>
+<p>What if I told you that in IDA’s <a href="https://hackage.haskell.org/package/otel-effectful"><code>otel-effectful</code></a><a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>
+library, we have two different types that model trace and span IDs.
+They’re both called <code>ID</code>:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode numberSource numberLines haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">module</span> <span class="dt">Effectful.OpenTelemetry.Tracing.Span.ID</span> <span class="kw">where</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a><span class="co">-- ...</span></span>
+<span id="cb8-3"><a href="#cb8-3"></a></span>
+<span id="cb8-4"><a href="#cb8-4"></a><span class="co">-- | A globally unique identifier of a span.</span></span>
+<span id="cb8-5"><a href="#cb8-5"></a><span class="kw">newtype</span> <span class="dt">ID</span> <span class="ot">=</span> <span class="dt">ID</span> <span class="dt">ByteString</span></span></code></pre></div>
+<p>…and</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode numberSource numberLines haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">module</span> <span class="dt">Effectful.OpenTelemetry.Tracing.Trace.ID</span> <span class="kw">where</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a><span class="co">-- ...</span></span>
+<span id="cb9-3"><a href="#cb9-3"></a></span>
+<span id="cb9-4"><a href="#cb9-4"></a><span class="co">-- | A globally unique identifier of a trace.</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a><span class="kw">newtype</span> <span class="dt">ID</span> <span class="ot">=</span> <span class="dt">ID</span> <span class="dt">ByteString</span></span></code></pre></div>
+<p>The modules export concise, <u><strong>un</strong></u>prefixed identifiers:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode numberSource numberLines haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1"></a><span class="ot">new ::</span> <span class="dt">IO</span> <span class="dt">ID</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a></span>
+<span id="cb10-3"><a href="#cb10-3"></a><span class="ot">toHex ::</span> <span class="dt">ID</span> <span class="ot">-&gt;</span> <span class="dt">Text</span></span>
+<span id="cb10-4"><a href="#cb10-4"></a></span>
+<span id="cb10-5"><a href="#cb10-5"></a><span class="ot">toBytes ::</span> <span class="dt">ID</span> <span class="ot">-&gt;</span> <span class="dt">ByteString</span></span>
+<span id="cb10-6"><a href="#cb10-6"></a></span>
+<span id="cb10-7"><a href="#cb10-7"></a><span class="co">-- ...</span></span></code></pre></div>
+<p>We don’t worry about clashes, because we encourage our dependents to import our modules qualified.
+And we do so ourselves:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode numberSource numberLines haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">import</span> <span class="dt">Effectful.OpenTelemetry.Tracing.Span.ID</span> <span class="kw">qualified</span> <span class="kw">as</span> <span class="dt">Span</span> (<span class="dt">ID</span>)</span>
+<span id="cb11-2"><a href="#cb11-2"></a><span class="kw">import</span> <span class="dt">Effectful.OpenTelemetry.Tracing.Span.ID</span> <span class="kw">qualified</span> <span class="kw">as</span> <span class="dt">Span.ID</span></span></code></pre></div>
+<p>Notice the two imports for each definition.
+The first one is qualified as <code>Span</code>, but exposes <em>only the <code>ID</code> type</em>.
+This allows us to namespace <code>ID</code> as <code>Span.*</code>, but all other identifiers are namespaced
+under <code>Span.ID.*</code>, resulting in code that looks like this:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode numberSource numberLines haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1"></a><span class="ot">spanId ::</span> <span class="dt">Span.ID</span> <span class="ot">&lt;-</span> Span.ID.new</span></code></pre></div>
+<p>This design incentivises you and your library’s users to write more readable code.<br />
+It also extends to things like record fields.
+A common pattern to disambiguate field names is to give each one a prefix, or to use
+<a href="https://flora.pm/packages/@hackage/lens">lenses</a>. Here’s <a href="https://github.com/frasertweedale/hs-jose/blob/ffd6a66c2e2844ec5e506806963f4e46accf1ae9/src/Crypto/JWT.hs#L475">an example which uses lenses that I found in the wild</a>:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode numberSource numberLines haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1"></a><span class="kw">data</span> <span class="dt">JWTValidationSettings</span> <span class="ot">=</span> <span class="dt">JWTValidationSettings</span></span>
+<span id="cb13-2"><a href="#cb13-2"></a>  {<span class="ot"> _jwtValidationSettingsValidationSettings ::</span> <span class="dt">ValidationSettings</span></span>
+<span id="cb13-3"><a href="#cb13-3"></a>  ,<span class="ot"> _jwtValidationSettingsAllowedSkew ::</span> <span class="dt">NominalDiffTime</span></span>
+<span id="cb13-4"><a href="#cb13-4"></a>  ,<span class="ot"> _jwtValidationSettingsCheckIssuedAt ::</span> <span class="dt">Bool</span></span>
+<span id="cb13-5"><a href="#cb13-5"></a>  ,<span class="ot"> _jwtValidationSettingsAudiencePredicate ::</span> <span class="dt">StringOrURI</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb13-6"><a href="#cb13-6"></a>  ,<span class="ot"> _jwtValidationSettingsIssuerPredicate ::</span> <span class="dt">StringOrURI</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb13-7"><a href="#cb13-7"></a>  }</span>
+<span id="cb13-8"><a href="#cb13-8"></a>makeClassy '<span class="dt">'JWTValidationSettings</span></span></code></pre></div>
+<p>Contrast this with the <code>otel-effectful</code> library:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode numberSource numberLines haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">module</span> <span class="dt">Effectful.OpenTelemetry.Tracing.Trace.Flags</span> <span class="kw">where</span></span>
+<span id="cb14-2"><a href="#cb14-2"></a></span>
+<span id="cb14-3"><a href="#cb14-3"></a><span class="kw">data</span> <span class="dt">Flags</span> <span class="ot">=</span> <span class="dt">Flags</span></span>
+<span id="cb14-4"><a href="#cb14-4"></a>    {<span class="ot"> sampled ::</span> <span class="dt">Bool</span></span>
+<span id="cb14-5"><a href="#cb14-5"></a>    ,<span class="ot"> random ::</span> <span class="dt">Bool</span></span>
+<span id="cb14-6"><a href="#cb14-6"></a>    , <span class="co">-- ...</span></span>
+<span id="cb14-7"><a href="#cb14-7"></a>    }</span>
+<span id="cb14-8"><a href="#cb14-8"></a></span>
+<span id="cb14-9"><a href="#cb14-9"></a><span class="kw">instance</span> <span class="dt">Monoid</span> <span class="dt">Flags</span> <span class="kw">where</span></span>
+<span id="cb14-10"><a href="#cb14-10"></a>    <span class="co">-- ...</span></span>
+<span id="cb14-11"><a href="#cb14-11"></a></span>
+<span id="cb14-12"><a href="#cb14-12"></a><span class="kw">instance</span> <span class="dt">Semigroup</span> <span class="dt">Flags</span> <span class="kw">where</span></span>
+<span id="cb14-13"><a href="#cb14-13"></a>    <span class="co">-- ...</span></span></code></pre></div>
+<p>Designing for qualified import, we don’t need to worry about namespacing record fields either.
+At the call site, we follow the same pattern as before:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode numberSource numberLines haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1"></a><span class="kw">import</span> <span class="dt">Effectful.OpenTelemetry.Tracing.Trace.Flags</span> <span class="kw">qualified</span> <span class="kw">as</span> <span class="dt">Trace</span> (<span class="dt">Flags</span>)</span>
+<span id="cb15-2"><a href="#cb15-2"></a><span class="kw">import</span> <span class="dt">Effectful.OpenTelemetry.Tracing.Trace.Flags</span> <span class="kw">qualified</span> <span class="kw">as</span> <span class="dt">Trace.Flags</span></span></code></pre></div>
+<ul>
+<li>One import to namespace the type.</li>
+<li>A second import to namespace the functions.</li>
+</ul>
+<p>And here’s how we construct <code>Trace.Flags</code> from a <code>mempty</code>:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode numberSource numberLines haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1"></a><span class="ot">flags ::</span> <span class="dt">Trace.Flags</span></span>
+<span id="cb16-2"><a href="#cb16-2"></a>flags <span class="ot">=</span> <span class="fu">mempty</span></span>
+<span id="cb16-3"><a href="#cb16-3"></a>    { Trace.Flags.sampled <span class="ot">=</span> <span class="dt">True</span></span>
+<span id="cb16-4"><a href="#cb16-4"></a>    , Trace.Flags.random <span class="ot">=</span> <span class="dt">True</span></span>
+<span id="cb16-5"><a href="#cb16-5"></a>    }</span></code></pre></div>
+<blockquote>
+<p><strong>Note</strong></p>
+<p>If this style doesn’t resonate with you, you can import the fields unqualified,
+or you can add an import that’s qualified as <code>Flags</code>.</p>
+</blockquote>
+<h2 id="the-pattern">The pattern</h2>
+<p>The pattern that works for us boils down to the following:</p>
+<ul>
+<li>The type must be defined in a module whose final component has the same name as the type.<br />
+For example, <code>Flags</code> is defined in a module ending in <code>Flags</code>.</li>
+<li>The components <strong>immediately before</strong> the final component are the namespace.</li>
+<li>Anything that should be namespaced by the <strong>type name</strong> goes into that module.<br />
+This includes smart constructors, functions that operate on the type,
+and any other related definitions.</li>
+<li>Dependents import qualified, typically with two imports:
+<ul>
+<li>One for the type, namespaced to any number of components <strong>leading up to the last component</strong>,
+and importing <strong>only the type that the module is named after</strong>.</li>
+<li>Another for the definitions, namespaced to a qualifier <strong>that includes the last component</strong>.</li>
+</ul></li>
+</ul>
+<blockquote>
+<p><strong>Important</strong></p>
+<p>To minimise the chance of our internal definitions clashing with <code>Prelude</code> functions
+(among other things), we use <a href="https://wiki.haskell.org/No_import_of_Prelude"><code>NoImplicitPrelude</code></a>.</p>
+</blockquote>
+<h2 id="exception-infix-operators">Exception: Infix operators</h2>
+<p>There’s one exception to this rule: Infix operators. <code>a Foo.&lt;+&gt; b</code> is just too ugly.
+We always import operators unqualified.</p>
+<h2 id="bonus-faster-compile-times">Bonus: Faster compile times?</h2>
+<p>Apart from marrying readability &amp; conciseness and protecting you from breakage,
+designing for qualified import can also improve your compile times.
+There’s a great talk by <a href="https://informal.codes/"><strong><span class="citation" data-cites="TeofilC">@TeofilC</span></strong></a>: <a href="https://www.youtube.com/watch?v=nmE6aa_I5TU&amp;t=2359s">optimise your modules for fast builds</a>.
+In it, they explain that GHC can parallelise independent module builds,
+but by default, it can’t compile modules that depend on each other in parallel.
+Nor can it parallelise the compilation of definitions within an individual module.</p>
+<p>Here’s the dependency layout for our <code>Span</code> example:</p>
+<p><img src="../images/span_trace_module_dependencies.svg" /></p>
+<p>As you can see, it may lend itself quite nicely to parallelism.</p>
+<blockquote>
+<p><strong>Important</strong></p>
+<p>Take this with a grain of salt.
+We haven’t optimised <code>otel-effectful</code> for fast compilation.
+With low core counts, the overhead of compiling multiple modules can increase compile times.</p>
+</blockquote>
+<section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Which, by the way, can be also used to design for qualified import.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>We prefer <a href="https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/import_qualified_post.html"><code>ImportQualifiedPost</code></a>.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p><a href="https://opentelemetry.io/">OpenTelemetry</a> instrumentation for <a href="https://haskell-effectful.github.io/"><code>effectful</code></a>.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+    </section>
+</article>
+
+                </div>
+                <div class="filler" aria-hidden="true"></div>
+            </div>
+        </main>
+
+        <div class="statusbar">
+            <footer class="statusline">
+                <span class="mode">COMMAND</span>
+                <span class="jj">
+                    <span class="jj-symbol">󱗆</span>
+                    <span class="jj-change"><span class="jj-prefix">mvzp</span>qwrn</span>
+                    <span class="jj-bookmark">(main~1)</span>
+                </span>
+                <span class="spacer"></span>
+                <span class="seg">utf-8</span>
+                <span class="seg diag"> 0</span>
+                <span class="seg">haskell</span>
+                <span class="progress" aria-hidden="true"></span>
+            </footer>
+            <div class="cmdline" aria-hidden="true">
+                <span class="prompt">:</span>
+                <span class="cursor"></span>
+            </div>
+        </div>
+    </body>
+</html>
